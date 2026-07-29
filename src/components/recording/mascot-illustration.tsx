@@ -1,7 +1,7 @@
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
-const MASCOT_SOURCE = require('@/assets/images/pcicon.png');
+const MASCOT_SOURCE = require('../../../assets/images/pcicon.png');
 
 const COLS = 4;
 const ROWS = 2;

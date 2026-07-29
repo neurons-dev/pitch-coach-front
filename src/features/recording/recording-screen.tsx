@@ -43,6 +43,10 @@ export default function RecordingScreen() {
     setIsPaused(false);
   };
 
+  const goHome = () => {
+    router.push('/');
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.contentCard}>
@@ -50,7 +54,7 @@ export default function RecordingScreen() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="뒤로 가기"
-            onPress={() => router.back()}
+            onPress={goHome}
             style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}>
             <MaterialIcons name="arrow-back" size={22} color={RecordingColors.textPrimary} />
           </Pressable>
@@ -75,7 +79,7 @@ export default function RecordingScreen() {
         <View style={styles.controls}>
           <ControlBar
             onPlay={() => setIsPaused((current) => !current)}
-            onStop={() => router.back()}
+            onStop={goHome}
             onRestart={handleRestart}
           />
         </View>
