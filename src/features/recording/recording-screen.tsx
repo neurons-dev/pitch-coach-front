@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,6 +29,17 @@ export default function RecordingScreen() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [status, setStatus] = useState<RecordingStatus>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // 탭 화면은 이동 후에도 언마운트되지 않아서, 화면을 벗어나면 대기 상태로 초기화한다.
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setStatus('idle');
+        setElapsedSeconds(0);
+        setIsSubmitting(false);
+      };
+    }, []),
+  );
 
   useEffect(() => {
     if (status !== 'recording') {
