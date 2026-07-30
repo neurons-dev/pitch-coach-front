@@ -4,20 +4,25 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { RecordingColors } from '@/constants/recording-theme';
 
 type ControlBarProps = {
-  onPlay?: () => void;
+  isPaused: boolean;
+  onTogglePause?: () => void;
   onStop?: () => void;
   onRestart?: () => void;
 };
 
-export function ControlBar({ onPlay, onStop, onRestart }: ControlBarProps) {
+export function ControlBar({ isPaused, onTogglePause, onStop, onRestart }: ControlBarProps) {
   return (
     <View style={styles.container}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="재생"
-        onPress={onPlay}
+        accessibilityLabel={isPaused ? '녹음 재개' : '녹음 일시정지'}
+        onPress={onTogglePause}
         style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}>
-        <MaterialIcons name="play-arrow" size={30} color={RecordingColors.controlIcon} />
+        <MaterialIcons
+          name={isPaused ? 'play-arrow' : 'pause'}
+          size={30}
+          color={RecordingColors.controlIcon}
+        />
       </Pressable>
 
       <Pressable

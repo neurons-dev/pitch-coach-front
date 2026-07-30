@@ -12,7 +12,18 @@ export default function HomeScreen() {
         onPress={() => router.push('/recording' as never)}>
         <Text style={styles.linkText}>녹음 화면 미리보기</Text>
       </Pressable>
-      <Text style={styles.linkDescription}>Figma 22번 녹음 화면 UI를 확인할 수 있습니다.</Text>
+
+      <Pressable
+        style={[styles.linkButton, styles.secondaryButton]}
+        onPress={() => router.push('/analysis' as never)}>
+        <Text style={styles.linkText}>분석 화면 미리보기</Text>
+      </Pressable>
+
+      <Pressable
+        style={[styles.linkButton, styles.secondaryButton]}
+        onPress={() => router.push('/result' as never)}>
+        <Text style={styles.linkText}>결과 화면 미리보기</Text>
+      </Pressable>
     </View>
   );
 }
@@ -33,21 +44,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   linkButton: {
-    marginTop: 24,
+    marginTop: 16,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 12,
     backgroundColor: '#6B9FD4',
+    minWidth: 220,
+    alignItems: 'center',
+  },
+  secondaryButton: {
+    backgroundColor: '#5B8DEF',
   },
   linkText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-  },
-  linkDescription: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#5A6472',
-    textAlign: 'center',
   },
 });

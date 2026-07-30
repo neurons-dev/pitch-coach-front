@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { uploadRecording } from '@/api/analysis-api';
+import { MascotIllustration } from '@/components/mascot-illustration';
 import { ControlBar } from '@/components/recording/control-bar';
-import { MascotIllustration } from '@/components/recording/mascot-illustration';
-import { TipBanner } from '@/components/recording/tip-banner';
 import { WaveformVisualizer } from '@/components/recording/waveform-visualizer';
+import { TipBanner } from '@/components/tip-banner';
 import { RecordingColors } from '@/constants/recording-theme';
 
-const INITIAL_SECONDS = 3 * 60 + 26;
+const RECORDING_TITLE = '자기소개 발표 연습';
 
 function formatTimer(totalSeconds: number) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -22,12 +23,15 @@ function formatTimer(totalSeconds: number) {
     .join(':');
 }
 
+type RecordingStatus = 'idle' | 'recording' | 'paused';
+
 export default function RecordingScreen() {
-  const [elapsedSeconds, setElapsedSeconds] = useState(INITIAL_SECONDS);
-  const [isPaused, setIsPaused] = useState(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [status, setStatus] = useState<RecordingStatus>('idle');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isPaused) {
+    if (status !== 'recording') {
       return;
     }
 
@@ -36,15 +40,42 @@ export default function RecordingScreen() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPaused]);
+  }, [status]);
+
+  const handleStart = () => {
+    // TODO(API): 실제 마이크 녹음 시작 (expo-audio 등) 연결 지점
+    setElapsedSeconds(0);
+    setStatus('recording');
+  };
 
   const handleRestart = () => {
     setElapsedSeconds(0);
-    setIsPaused(false);
+    setStatus('recording');
   };
 
   const goHome = () => {
-    router.push('/');
+    router.push('/' as never);
+  };
+
+  const handleStop = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setStatus('paused');
+
+    try {
+      // TODO(API): 실제 녹음 오디오 파일(audioUri)을 함께 업로드하도록 교체
+      const { analysisId } = await uploadRecording({
+        title: RECORDING_TITLE,
+        durationSeconds: elapsedSeconds,
+      });
+
+      router.push({ pathname: '/analysis', params: { analysisId } } as never);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -59,16 +90,18 @@ export default function RecordingScreen() {
             <MaterialIcons name="arrow-back" size={22} color={RecordingColors.textPrimary} />
           </Pressable>
 
-          <View style={styles.recBadge}>
-            <View style={styles.recDot} />
-            <Text style={styles.recText}>REC</Text>
-          </View>
+          {status !== 'idle' && (
+            <View style={styles.recBadge}>
+              <View style={styles.recDot} />
+              <Text style={styles.recText}>{status === 'paused' ? 'PAUSE' : 'REC'}</Text>
+            </View>
+          )}
         </View>
 
-        <Text style={styles.title}>자기소개 발표 연습</Text>
+        <Text style={styles.title}>{RECORDING_TITLE}</Text>
         <Text style={styles.timer}>{formatTimer(elapsedSeconds)}</Text>
 
-        <WaveformVisualizer active={!isPaused} />
+        <WaveformVisualizer active={status === 'recording'} />
 
         <View style={styles.mascotContainer}>
           <MascotIllustration />
@@ -77,11 +110,27 @@ export default function RecordingScreen() {
         <TipBanner />
 
         <View style={styles.controls}>
-          <ControlBar
-            onPlay={() => setIsPaused((current) => !current)}
-            onStop={goHome}
-            onRestart={handleRestart}
-          />
+          {status === 'idle' ? (
+            <View style={styles.startArea}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="녹음 시작"
+                onPress={handleStart}
+                style={({ pressed }) => [styles.startButton, pressed && styles.pressed]}>
+                <MaterialIcons name="mic" size={30} color={RecordingColors.stopIcon} />
+                <Text style={styles.startLabel}>시작하기</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <ControlBar
+              isPaused={status === 'paused'}
+              onTogglePause={() =>
+                setStatus((current) => (current === 'paused' ? 'recording' : 'paused'))
+              }
+              onStop={handleStop}
+              onRestart={handleRestart}
+            />
+          )}
         </View>
       </View>
     </SafeAreaView>
@@ -159,10 +208,29 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 200,
+    minHeight: 160,
   },
   controls: {
     marginTop: 'auto',
+  },
+  startArea: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingBottom: 36,
+  },
+  startButton: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: RecordingColors.waveform,
+    gap: 4,
+  },
+  startLabel: {
+    color: RecordingColors.stopIcon,
+    fontSize: 13,
+    fontWeight: '700',
   },
   pressed: {
     opacity: 0.85,
