@@ -1,16 +1,21 @@
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { RecordingColors } from '@/constants/recording-theme';
+import { AnalysisColors } from '@/constants/analysis-theme';
+import { getRandomTip } from '@/constants/tips';
 
 export function TipBanner() {
+  // 화면에 들어올 때마다 랜덤으로 팁 하나를 고른다.
+  const [tip] = useState(getRandomTip);
+
   return (
     <View style={styles.container}>
       <View style={styles.badge}>
         <Text style={styles.badgeText}>TIP</Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.title}>적정 길이 5~8분</Text>
-        <Text style={styles.subtitle}>3~5분 분량이 적절해요</Text>
+        <Text style={styles.title}>{tip.title}</Text>
+        <Text style={styles.subtitle}>{tip.description}</Text>
       </View>
     </View>
   );
@@ -26,7 +31,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
     borderRadius: 16,
-    backgroundColor: RecordingColors.tipBackground,
+    backgroundColor: AnalysisColors.primaryLight,
   },
   badge: {
     width: 44,
@@ -34,7 +39,7 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: RecordingColors.tipBadge,
+    backgroundColor: AnalysisColors.primary,
   },
   badgeText: {
     color: '#FFFFFF',
@@ -47,12 +52,12 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   title: {
-    color: RecordingColors.textPrimary,
+    color: AnalysisColors.textPrimary,
     fontSize: 15,
     fontWeight: '700',
   },
   subtitle: {
-    color: RecordingColors.textSecondary,
+    color: AnalysisColors.textSecondary,
     fontSize: 13,
     lineHeight: 18,
   },
