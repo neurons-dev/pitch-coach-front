@@ -1,1 +1,1 @@
-export { default } from '@/features/recording/RecordingScreen';
+export { default } from '@/features/recording/recording-screen';

@@ -1,0 +1,16 @@
+export const RecordingColors = {
+  screen: '#F4F8FC',
+  background: '#FFFFFF',
+  cardBorder: '#A8D4F5',
+  cardGlow: '#7EB8E8',
+  textPrimary: '#2D3748',
+  textSecondary: '#5A6472',
+  rec: '#E53935',
+  waveform: '#6B9FD4',
+  tipBackground: '#EDF2FF',
+  tipBadge: '#6B9FD4',
+  controlSecondary: '#EEF1F5',
+  controlIcon: '#2D3748',
+  stopButton: '#F05A40',
+  stopIcon: '#FFFFFF',
+};
