@@ -1,1 +1,1 @@
-export { default } from '@/features/analysis/result-screen';
+export { default } from '../features/analysis/result-screen';
