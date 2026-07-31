@@ -40,7 +40,12 @@ export default function HomeScreen() {
 
     const file = result.assets[0];
 
-    Alert.alert('파일 선택 완료', file.name);
+    Alert.alert('파일 선택 완료', file.name, [
+      {
+        text: 'OK',
+        onPress: () => router.push('/analysis'),
+      },
+    ]);
   };
 
   return (
