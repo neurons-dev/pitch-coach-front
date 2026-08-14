@@ -5,10 +5,13 @@
 export const API_BASE_URL = 'http://localhost:8000';
 
 export async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  // FormData 본문은 boundary를 포함한 Content-Type을 fetch가 직접 설정해야 하므로 강제로 덮어쓰지 않는다.
+  const isFormData = options?.body instanceof FormData;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...options?.headers,
     },
   });

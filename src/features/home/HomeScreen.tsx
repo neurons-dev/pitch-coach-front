@@ -1,7 +1,6 @@
-import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RecentAnalysis = {
@@ -27,25 +26,11 @@ function getScoreColor(score: number) {
 
 export default function HomeScreen() {
   const handleStartRecording = () => {
-    router.push('/recording');
+    router.push({ pathname: '/session-new', params: { mode: 'record' } } as never);
   };
 
-  const handleFileUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['audio/*'],
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) return;
-
-    const file = result.assets[0];
-
-    Alert.alert('파일 선택 완료', file.name, [
-      {
-        text: 'OK',
-        onPress: () => router.push('/analysis'),
-      },
-    ]);
+  const handleFileUpload = () => {
+    router.push({ pathname: '/session-new', params: { mode: 'upload' } } as never);
   };
 
   return (
