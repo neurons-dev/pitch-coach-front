@@ -1,5 +1,5 @@
 import { resetMockAnalysisProgress } from '@/api/analysis-api';
-import type { SessionId, UploadedFile } from '@/types/analysis';
+import type { CreateSessionParams, SessionId, UploadedFile } from '@/types/analysis';
 
 /**
  * ─────────────────────────────────────────────────────────────
@@ -13,12 +13,16 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** 1단계: 분석 세션을 생성한다. */
-export async function createSession(title: string): Promise<{ sessionId: SessionId }> {
+/** 1단계: 분석 세션을 생성한다. targetDurationSeconds는 이후 AI 분석 시 기준값으로 사용된다. */
+export async function createSession(params: CreateSessionParams): Promise<{ sessionId: SessionId }> {
   // TODO(API): 실제 구현 예시
   // return apiFetch<{ sessionId: SessionId }>('/sessions', {
   //   method: 'POST',
-  //   body: JSON.stringify({ title }),
+  //   body: JSON.stringify({
+  //     title: params.title,
+  //     practiceTypeCode: params.practiceTypeCode,
+  //     targetDurationSeconds: params.targetDurationSeconds,
+  //   }),
   // });
   await delay(200);
   return { sessionId: 'mock-session-id' };

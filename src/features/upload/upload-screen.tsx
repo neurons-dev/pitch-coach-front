@@ -19,7 +19,7 @@ export default function UploadScreen() {
   }
 
   const goHome = () => {
-    router.push('/' as never);
+    router.replace('/(tabs)' as never);
   };
 
   // 2단계: 세션에 파일 업로드

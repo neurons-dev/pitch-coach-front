@@ -83,7 +83,7 @@ export default function RecordingScreen() {
   };
 
   const goHome = () => {
-    router.push('/' as never);
+    router.replace('/(tabs)' as never);
   };
 
   // 녹음 종료 버튼: 2단계(파일 업로드)만 진행한다. 분석 요청은 별도 버튼으로 진행한다.
