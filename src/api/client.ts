@@ -17,10 +17,11 @@ function isAuthPath(path: string): boolean {
 }
 
 async function rawFetch(path: string, accessToken: string | null, options?: RequestInit) {
+  const isFormData = options?.body instanceof FormData;
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
       ...options?.headers,
     },
