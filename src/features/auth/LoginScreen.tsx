@@ -36,7 +36,7 @@ export default function LoginScreen() {
     try {
       await login({ email, password });
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch {
       Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
     } finally {
       setIsLoggingIn(false);
@@ -65,7 +65,7 @@ export default function LoginScreen() {
 
       await exchangeOAuthCode(code);
       router.replace('/(tabs)');
-    } catch (error) {
+    } catch {
       Alert.alert('로그인 실패', '소셜 로그인 처리 중 문제가 발생했어요.');
     } finally {
       setIsSocialLoggingIn(false);
