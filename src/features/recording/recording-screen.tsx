@@ -1,5 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Redirect, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ function formatTimer(totalSeconds: number) {
 type RecordingStatus = 'idle' | 'recording' | 'paused';
 
 export default function RecordingScreen() {
+  const navigation = useNavigation();
   const { sessionId, title } = useLocalSearchParams<{ sessionId?: string; title?: string }>();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -42,6 +43,7 @@ export default function RecordingScreen() {
   }, [sessionId]);
 
   // 탭 화면은 이동 후에도 언마운트되지 않아서, 화면을 벗어나면 대기 상태로 초기화한다.
+  // 라우트 파라미터(sessionId)도 함께 비워서, 다음 진입 시 세션 생성 화면부터 시작하게 한다.
   useFocusEffect(
     useCallback(() => {
       return () => {
@@ -50,8 +52,9 @@ export default function RecordingScreen() {
         setIsUploading(false);
         setIsUploaded(false);
         setIsRequestingAnalysis(false);
+        navigation.setParams({ sessionId: undefined, title: undefined } as never);
       };
-    }, []),
+    }, [navigation]),
   );
 
   useEffect(() => {
