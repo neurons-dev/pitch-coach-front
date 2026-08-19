@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -13,13 +14,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { signup } from '@/api/auth-api';
+import { ApiError } from '@/api/client';
+
 export default function SignupScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!name || !email || !password || !passwordConfirm) {
       Alert.alert('입력 확인', '모든 항목을 입력해주세요.');
       return;
@@ -30,12 +35,30 @@ export default function SignupScreen() {
       return;
     }
 
-    Alert.alert('회원가입 완료', '회원가입이 완료되었습니다.', [
-      {
-        text: '확인',
-        onPress: () => router.replace('/(tabs)'),
-      },
-    ]);
+    if (password.length < 8 || password.length > 64) {
+      Alert.alert('입력 확인', '비밀번호는 8~64자로 입력해주세요.');
+      return;
+    }
+
+    setIsSigningUp(true);
+    try {
+      // 백엔드 필드명은 nickname
+      await signup({ email, password, nickname: name });
+      Alert.alert('회원가입 완료', '회원가입이 완료되었습니다.', [
+        {
+          text: '확인',
+          onPress: () => router.replace('/(tabs)'),
+        },
+      ]);
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        Alert.alert('회원가입 실패', '이미 사용 중인 이메일이에요.');
+      } else {
+        Alert.alert('회원가입 실패', '잠시 후 다시 시도해주세요.');
+      }
+    } finally {
+      setIsSigningUp(false);
+    }
   };
 
   return (
@@ -84,8 +107,12 @@ export default function SignupScreen() {
               secureTextEntry
             />
 
-            <Pressable style={styles.signupButton} onPress={handleSignup}>
-              <Text style={styles.signupButtonText}>회원가입</Text>
+            <Pressable style={styles.signupButton} onPress={handleSignup} disabled={isSigningUp}>
+              {isSigningUp ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.signupButtonText}>회원가입</Text>
+              )}
             </Pressable>
 
             <Pressable style={styles.loginLinkButton} onPress={() => router.replace('/login')}>
