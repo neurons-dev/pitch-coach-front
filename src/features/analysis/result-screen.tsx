@@ -1,28 +1,94 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAnalysisResult } from '@/api/analysis-api';
 import { MetricCard } from '@/components/analysis/metric-card';
 import { MascotIllustration } from '@/components/mascot-illustration';
 import { AnalysisColors, MascotVariants } from '@/constants/analysis-theme';
-import type { AnalysisResult, MetricKey } from '@/types/analysis';
+import type { AnalysisResult, ImprovementTone, MetricKey } from '@/types/analysis';
 
-const METRIC_STYLE: Record<MetricKey, { icon: keyof typeof MaterialIcons.glyphMap; color: string }> = {
-  speed: { icon: 'bolt', color: AnalysisColors.metricBlue },
-  delivery: { icon: 'track-changes', color: AnalysisColors.metricRed },
-  structure: { icon: 'assignment', color: AnalysisColors.metricGreen },
-  fluency: { icon: 'mic', color: AnalysisColors.metricPurple },
+type MetricStyle = {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  iconColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  borderColor: string;
+};
+
+const METRIC_STYLE: Record<MetricKey, MetricStyle> = {
+  speed: {
+    icon: 'bolt',
+    iconColor: '#F4B740',
+    accentColor: AnalysisColors.metricBlue,
+    backgroundColor: AnalysisColors.tintBlueBg,
+    borderColor: AnalysisColors.tintBlueBorder,
+  },
+  delivery: {
+    icon: 'track-changes',
+    iconColor: AnalysisColors.metricRed,
+    accentColor: AnalysisColors.metricRed,
+    backgroundColor: AnalysisColors.tintYellowBg,
+    borderColor: AnalysisColors.tintYellowBorder,
+  },
+  structure: {
+    icon: 'assignment',
+    iconColor: AnalysisColors.metricGreen,
+    accentColor: AnalysisColors.metricGreen,
+    backgroundColor: AnalysisColors.tintGreenBg,
+    borderColor: AnalysisColors.tintGreenBorder,
+  },
+  fluency: {
+    icon: 'mic',
+    iconColor: AnalysisColors.metricPurple,
+    accentColor: AnalysisColors.metricPurple,
+    backgroundColor: AnalysisColors.tintYellowBg,
+    borderColor: AnalysisColors.tintYellowBorder,
+  },
+  pronunciation: {
+    icon: 'record-voice-over',
+    iconColor: AnalysisColors.metricOrange,
+    accentColor: AnalysisColors.metricOrange,
+    backgroundColor: AnalysisColors.tintYellowBg,
+    borderColor: AnalysisColors.tintYellowBorder,
+  },
+  fillerWords: {
+    icon: 'chat-bubble-outline',
+    iconColor: '#F4B740',
+    accentColor: AnalysisColors.metricGreen,
+    backgroundColor: AnalysisColors.tintYellowBg,
+    borderColor: AnalysisColors.tintYellowBorder,
+  },
+};
+
+type ImprovementStyle = {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  iconColor: string;
+  backgroundColor: string;
+  borderColor: string;
+};
+
+const IMPROVEMENT_STYLE: Record<ImprovementTone, ImprovementStyle> = {
+  info: {
+    icon: 'speed',
+    iconColor: AnalysisColors.metricBlue,
+    backgroundColor: AnalysisColors.tintBlueBg,
+    borderColor: AnalysisColors.tintBlueBorder,
+  },
+  warning: {
+    icon: 'flare',
+    iconColor: AnalysisColors.metricRed,
+    backgroundColor: AnalysisColors.tintRedBg,
+    borderColor: AnalysisColors.tintRedBorder,
+  },
+  success: {
+    icon: 'fact-check',
+    iconColor: AnalysisColors.metricGreen,
+    backgroundColor: AnalysisColors.tintGreenBg,
+    borderColor: AnalysisColors.tintGreenBorder,
+  },
 };
 
 export default function ResultScreen() {
@@ -51,11 +117,6 @@ export default function ResultScreen() {
     }
   };
 
-  const openFeedbackDetail = () => {
-    // TODO(API): AI 피드백 상세 화면/API 연결 후 이동하도록 교체
-    Alert.alert('준비 중', 'AI 피드백 상세 기능은 백엔드 API 연결 후 제공돼요.');
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.header}>
@@ -67,7 +128,6 @@ export default function ResultScreen() {
           <MaterialIcons name="arrow-back" size={22} color={AnalysisColors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>분석 결과</Text>
-        <View style={styles.headerSpacer} />
       </View>
 
       {result === null ? (
@@ -78,41 +138,68 @@ export default function ResultScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.scoreCard}>
-            <View style={styles.scoreRow}>
-              <View style={styles.scoreRing}>
-                <Text style={styles.scoreValue}>{result.totalScore}</Text>
-                <Text style={styles.scoreUnit}>점</Text>
-              </View>
-              <MascotIllustration variantIndex={MascotVariants.result} size="sm" />
+            <View style={styles.scoreRing}>
+              <Text style={styles.scoreValue}>{result.totalScore}</Text>
+              <Text style={styles.scoreUnit}>점</Text>
             </View>
-
-            <Text style={styles.scoreCaption}>
-              전체 평균보다{' '}
-              <Text style={styles.scoreHighlight}>
-                {Math.abs(result.comparedToAveragePercent)}% {result.comparedToAveragePercent >= 0 ? '높아요' : '낮아요'}
-              </Text>{' '}
-              🎉
-            </Text>
+            <MascotIllustration variantIndex={MascotVariants.result} size="sm" />
           </View>
 
           <View style={styles.metricGrid}>
-            {result.metrics.map((metric) => (
-              <MetricCard
-                key={metric.key}
-                icon={METRIC_STYLE[metric.key].icon}
-                label={metric.label}
-                score={metric.score}
-                accentColor={METRIC_STYLE[metric.key].color}
-              />
-            ))}
+            {result.metrics.map((metric) => {
+              const style = METRIC_STYLE[metric.key];
+              return (
+                <MetricCard
+                  key={metric.key}
+                  icon={style.icon}
+                  iconColor={style.iconColor}
+                  label={metric.label}
+                  value={`${metric.score}${metric.unit ?? ''}`}
+                  accentColor={style.accentColor}
+                  backgroundColor={style.backgroundColor}
+                  borderColor={style.borderColor}
+                  progress={metric.progress ?? metric.score}
+                />
+              );
+            })}
+          </View>
+
+          <View style={styles.coachCard}>
+            <View style={styles.coachHeader}>
+              <MaterialIcons name="forum" size={20} color={AnalysisColors.button} />
+              <Text style={styles.coachTitle}>Coach Mic의 한마디</Text>
+            </View>
+            <Text style={styles.coachComment}>{result.coachComment}</Text>
+          </View>
+
+          <Text style={styles.sectionTitle}>개선 포인트</Text>
+          <View style={styles.improvementList}>
+            {result.improvements.map((point) => {
+              const style = IMPROVEMENT_STYLE[point.tone];
+              return (
+                <View
+                  key={point.title}
+                  style={[
+                    styles.improvementCard,
+                    { backgroundColor: style.backgroundColor, borderColor: style.borderColor },
+                  ]}>
+                  <View style={styles.improvementIcon}>
+                    <MaterialIcons name={style.icon} size={20} color={style.iconColor} />
+                  </View>
+                  <View style={styles.improvementBody}>
+                    <Text style={styles.improvementTitle}>{point.title}</Text>
+                    <Text style={styles.improvementDescription}>{point.description}</Text>
+                  </View>
+                </View>
+              );
+            })}
           </View>
 
           <Pressable
             accessibilityRole="button"
-            onPress={openFeedbackDetail}
-            style={({ pressed }) => [styles.feedbackButton, pressed && styles.pressed]}>
-            <MaterialIcons name="bar-chart" size={20} color={AnalysisColors.buttonText} />
-            <Text style={styles.feedbackButtonText}>AI 피드백 자세히 보기</Text>
+            onPress={goBack}
+            style={({ pressed }) => [styles.returnButton, pressed && styles.pressed]}>
+            <Text style={styles.returnButtonText}>돌아가기</Text>
           </Pressable>
         </ScrollView>
       )}
@@ -128,7 +215,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -143,10 +230,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: AnalysisColors.textPrimary,
     fontSize: 18,
-    fontWeight: '700',
-  },
-  headerSpacer: {
-    width: 40,
+    fontWeight: '800',
   },
   loading: {
     flex: 1,
@@ -163,69 +247,116 @@ const styles = StyleSheet.create({
     paddingBottom: 32,
   },
   scoreCard: {
-    padding: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    padding: 24,
     borderRadius: 20,
     backgroundColor: AnalysisColors.background,
     borderWidth: 1,
     borderColor: AnalysisColors.cardBorder,
     marginBottom: 16,
   },
-  scoreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   scoreRing: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    borderWidth: 6,
-    borderColor: AnalysisColors.scoreRing,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: 8,
+    borderColor: AnalysisColors.button,
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 2,
   },
   scoreValue: {
-    color: AnalysisColors.scoreRing,
-    fontSize: 32,
+    color: AnalysisColors.textPrimary,
+    fontSize: 36,
     fontWeight: '800',
+    lineHeight: 40,
   },
   scoreUnit: {
-    color: AnalysisColors.scoreRing,
-    fontSize: 16,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  scoreCaption: {
-    marginTop: 16,
     color: AnalysisColors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  scoreHighlight: {
-    color: AnalysisColors.highlightGreen,
+    fontSize: 13,
     fontWeight: '700',
   },
   metricGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 12,
+    marginBottom: 16,
+  },
+  coachCard: {
+    padding: 18,
+    borderRadius: 16,
+    backgroundColor: AnalysisColors.background,
+    borderWidth: 1,
+    borderColor: AnalysisColors.cardBorder,
     marginBottom: 24,
   },
-  feedbackButton: {
+  coachHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 8,
+    marginBottom: 10,
+  },
+  coachTitle: {
+    color: AnalysisColors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  coachComment: {
+    color: AnalysisColors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
+  },
+  sectionTitle: {
+    color: AnalysisColors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+    marginBottom: 12,
+  },
+  improvementList: {
+    gap: 12,
+    marginBottom: 28,
+  },
+  improvementCard: {
+    flexDirection: 'row',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  improvementIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AnalysisColors.background,
+  },
+  improvementBody: {
+    flex: 1,
+  },
+  improvementTitle: {
+    color: AnalysisColors.textPrimary,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  improvementDescription: {
+    color: AnalysisColors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+  },
+  returnButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 14,
     backgroundColor: AnalysisColors.button,
   },
-  feedbackButtonText: {
+  returnButtonText: {
     color: AnalysisColors.buttonText,
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   pressed: {
     opacity: 0.85,

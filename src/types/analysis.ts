@@ -23,17 +23,39 @@ export type AnalysisProgress = {
   progress: number;
 };
 
-export type MetricKey = 'speed' | 'delivery' | 'structure' | 'fluency';
+export type MetricKey =
+  | 'speed'
+  | 'delivery'
+  | 'structure'
+  | 'fluency'
+  | 'pronunciation'
+  | 'fillerWords';
 
 export type AnalysisMetric = {
   key: MetricKey;
   label: string;
+  /** 점수(0~100). fillerWords는 개수 값이 들어온다. */
   score: number;
+  /** 점수 뒤에 붙일 단위 (예: '개'). 없으면 숫자만 표시한다. */
+  unit?: string;
+  /** 진행 바 채움 비율(0~100). 없으면 score를 그대로 사용한다. */
+  progress?: number;
+};
+
+export type ImprovementTone = 'info' | 'warning' | 'success';
+
+/** 개선 포인트 카드 한 개. */
+export type ImprovementPoint = {
+  tone: ImprovementTone;
+  title: string;
+  description: string;
 };
 
 export type AnalysisResult = {
   totalScore: number;
-  /** 전체 평균 대비 차이 (%). 양수면 평균보다 높음 */
-  comparedToAveragePercent: number;
   metrics: AnalysisMetric[];
+  /** Coach Mic의 한마디 */
+  coachComment: string;
+  /** 개선 포인트 목록 */
+  improvements: ImprovementPoint[];
 };
