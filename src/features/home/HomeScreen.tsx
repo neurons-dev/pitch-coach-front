@@ -6,6 +6,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecordingColors } from '@/constants/recording-theme';
+import { useCurrentUser } from '@/hooks/use-current-user';
 
 type RecentAnalysis = {
   id: number;
@@ -29,6 +30,8 @@ function getScoreColor(score: number) {
 }
 
 export default function HomeScreen() {
+  const { name } = useCurrentUser();
+
   const handleStartRecording = () => {
     router.push('/recording');
   };
@@ -60,7 +63,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.greeting}>안녕하세요, 발표자님!</Text>
+          <Text style={styles.greeting}>안녕하세요, {name ?? '발표자'}님!</Text>
           <Text style={styles.subtitle}>오늘도 멋진 발표를 준비해요.</Text>
         </View>
 

@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import { clearTokens, saveTokens } from '@/store/auth-store';
+import { clearTokens, saveTokens, saveUser } from '@/store/auth-store';
 import type { AuthResponse, LoginRequest, SignupRequest, TokenResponse } from '@/types/auth';
 
 export async function signup(request: SignupRequest): Promise<AuthResponse> {
@@ -8,6 +8,7 @@ export async function signup(request: SignupRequest): Promise<AuthResponse> {
     body: JSON.stringify(request),
   });
   await saveTokens(result.accessToken, result.refreshToken);
+  await saveUser(result.name, result.email);
   return result;
 }
 
@@ -17,6 +18,7 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
     body: JSON.stringify(request),
   });
   await saveTokens(result.accessToken, result.refreshToken);
+  await saveUser(result.name, result.email);
   return result;
 }
 
@@ -26,6 +28,7 @@ export async function exchangeOAuthCode(code: string): Promise<AuthResponse> {
     body: JSON.stringify({ code }),
   });
   await saveTokens(result.accessToken, result.refreshToken);
+  await saveUser(result.name, result.email);
   return result;
 }
 
