@@ -1,17 +1,15 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { router, useFocusEffect } from 'expo-router';
+import { Redirect, router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { uploadRecording } from '@/api/analysis-api';
+import { requestAnalysis, uploadFileToSession } from '@/api/session-api';
 import { MascotIllustration } from '@/components/mascot-illustration';
 import { ControlBar } from '@/components/recording/control-bar';
 import { WaveformVisualizer } from '@/components/recording/waveform-visualizer';
 import { TipBanner } from '@/components/tip-banner';
 import { RecordingColors } from '@/constants/recording-theme';
-
-const RECORDING_TITLE = '자기소개 발표 연습';
 
 function formatTimer(totalSeconds: number) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -26,19 +24,37 @@ function formatTimer(totalSeconds: number) {
 type RecordingStatus = 'idle' | 'recording' | 'paused';
 
 export default function RecordingScreen() {
+  const navigation = useNavigation();
+  const { sessionId, title } = useLocalSearchParams<{ sessionId?: string; title?: string }>();
+
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [status, setStatus] = useState<RecordingStatus>('idle');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isUploaded, setIsUploaded] = useState(false);
+  const [isRequestingAnalysis, setIsRequestingAnalysis] = useState(false);
+
+  // 세션이 바뀔 때마다(새 세션으로 진입할 때) 녹음 상태를 초기화한다.
+  useEffect(() => {
+    setElapsedSeconds(0);
+    setStatus('idle');
+    setIsUploading(false);
+    setIsUploaded(false);
+    setIsRequestingAnalysis(false);
+  }, [sessionId]);
 
   // 탭 화면은 이동 후에도 언마운트되지 않아서, 화면을 벗어나면 대기 상태로 초기화한다.
+  // 라우트 파라미터(sessionId)도 함께 비워서, 다음 진입 시 세션 생성 화면부터 시작하게 한다.
   useFocusEffect(
     useCallback(() => {
       return () => {
         setStatus('idle');
         setElapsedSeconds(0);
-        setIsSubmitting(false);
+        setIsUploading(false);
+        setIsUploaded(false);
+        setIsRequestingAnalysis(false);
+        navigation.setParams({ sessionId: undefined, title: undefined } as never);
       };
-    }, []),
+    }, [navigation]),
   );
 
   useEffect(() => {
@@ -53,6 +69,11 @@ export default function RecordingScreen() {
     return () => clearInterval(interval);
   }, [status]);
 
+  // 세션 없이 녹음 탭에 바로 진입하면 세션 생성 화면으로 보낸다.
+  if (!sessionId) {
+    return <Redirect href={{ pathname: '/session-new', params: { mode: 'record' } } as never} />;
+  }
+
   const handleStart = () => {
     // TODO(API): 실제 마이크 녹음 시작 (expo-audio 등) 연결 지점
     setElapsedSeconds(0);
@@ -65,27 +86,45 @@ export default function RecordingScreen() {
   };
 
   const goHome = () => {
-    router.push('/' as never);
+    router.replace('/(tabs)' as never);
   };
 
+  // 녹음 종료 버튼: 2단계(파일 업로드)만 진행한다. 분석 요청은 별도 버튼으로 진행한다.
   const handleStop = async () => {
-    if (isSubmitting) {
+    if (isUploading || isUploaded) {
       return;
     }
 
-    setIsSubmitting(true);
     setStatus('paused');
-
+    setIsUploading(true);
     try {
       // TODO(API): 실제 녹음 오디오 파일(audioUri)을 함께 업로드하도록 교체
-      const { analysisId } = await uploadRecording({
-        title: RECORDING_TITLE,
-        durationSeconds: elapsedSeconds,
+      await uploadFileToSession(sessionId, {
+        uri: '',
+        name: title ?? '',
       });
-
-      router.push({ pathname: '/analysis', params: { analysisId } } as never);
+      setIsUploaded(true);
+    } catch {
+      Alert.alert('업로드 실패', '녹음 파일을 업로드하는 중 문제가 발생했어요. 다시 시도해주세요.');
     } finally {
-      setIsSubmitting(false);
+      setIsUploading(false);
+    }
+  };
+
+  // 3단계: 분석 요청 버튼을 눌러야만 분석 화면으로 이동한다.
+  const handleRequestAnalysis = async () => {
+    if (!isUploaded || isRequestingAnalysis) {
+      return;
+    }
+
+    setIsRequestingAnalysis(true);
+    try {
+      const { analysisId } = await requestAnalysis(sessionId);
+      router.push({ pathname: '/analysis', params: { analysisId } } as never);
+    } catch {
+      Alert.alert('분석 요청 실패', '분석을 요청하는 중 문제가 발생했어요. 다시 시도해주세요.');
+    } finally {
+      setIsRequestingAnalysis(false);
     }
   };
 
@@ -109,7 +148,7 @@ export default function RecordingScreen() {
           )}
         </View>
 
-        <Text style={styles.title}>{RECORDING_TITLE}</Text>
+        <Text style={styles.title}>{title}</Text>
         <Text style={styles.timer}>{formatTimer(elapsedSeconds)}</Text>
 
         <WaveformVisualizer active={status === 'recording'} />
@@ -131,6 +170,27 @@ export default function RecordingScreen() {
                 <MaterialIcons name="mic" size={30} color={RecordingColors.stopIcon} />
                 <Text style={styles.startLabel}>시작하기</Text>
               </Pressable>
+            </View>
+          ) : isUploaded ? (
+            <View style={styles.startArea}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="분석 요청"
+                onPress={handleRequestAnalysis}
+                disabled={isRequestingAnalysis}
+                style={({ pressed }) => [
+                  styles.startButton,
+                  isRequestingAnalysis && styles.startButtonDisabled,
+                  pressed && styles.pressed,
+                ]}>
+                <Text style={styles.startLabel}>
+                  {isRequestingAnalysis ? '분석 요청 중...' : '분석 요청'}
+                </Text>
+              </Pressable>
+            </View>
+          ) : isUploading ? (
+            <View style={styles.startArea}>
+              <Text style={styles.submittingText}>파일 업로드 중...</Text>
             </View>
           ) : (
             <ControlBar
@@ -238,9 +298,17 @@ const styles = StyleSheet.create({
     backgroundColor: RecordingColors.waveform,
     gap: 4,
   },
+  startButtonDisabled: {
+    opacity: 0.6,
+  },
   startLabel: {
     color: RecordingColors.stopIcon,
     fontSize: 13,
+    fontWeight: '700',
+  },
+  submittingText: {
+    color: RecordingColors.textSecondary,
+    fontSize: 14,
     fontWeight: '700',
   },
   pressed: {

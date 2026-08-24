@@ -47,7 +47,7 @@ export default function ResultScreen() {
     if (router.canGoBack()) {
       router.back();
     } else {
-      router.replace('/' as never);
+      router.replace('/(tabs)' as never);
     }
   };
 
