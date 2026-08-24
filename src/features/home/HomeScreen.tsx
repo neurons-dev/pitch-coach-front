@@ -1,8 +1,7 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import * as DocumentPicker from 'expo-document-picker';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RecordingColors } from '@/constants/recording-theme';
@@ -33,25 +32,11 @@ export default function HomeScreen() {
   const { name } = useCurrentUser();
 
   const handleStartRecording = () => {
-    router.push('/recording');
+    router.push({ pathname: '/session-new', params: { mode: 'record' } } as never);
   };
 
-  const handleFileUpload = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ['audio/*'],
-      copyToCacheDirectory: true,
-    });
-
-    if (result.canceled) return;
-
-    const file = result.assets[0];
-
-    Alert.alert('파일 선택 완료', file.name, [
-      {
-        text: 'OK',
-        onPress: () => router.push('/analysis'),
-      },
-    ]);
+  const handleFileUpload = () => {
+    router.push({ pathname: '/session-new', params: { mode: 'upload' } } as never);
   };
 
   // 히스토리에 최신 분석 목록 화면이 생기기 전까지는 탭 이동만 처리한다.
