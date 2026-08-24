@@ -15,9 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+import { ApiError } from '@/api/client';
+import { changePassword } from '@/api/user-api';
 
 export default function PasswordChangeScreen() {
   const [currentPassword, setCurrentPassword] = useState('');
@@ -51,9 +50,11 @@ export default function PasswordChangeScreen() {
 
     setIsSubmitting(true);
     try {
-      // TODO(API): 비밀번호 변경 엔드포인트 연결
-      await delay(300);
+      await changePassword({ currentPassword, newPassword });
       Alert.alert('변경 완료', '비밀번호가 변경되었습니다.', [{ text: '확인', onPress: goBack }]);
+    } catch (error) {
+      const message = error instanceof ApiError ? error.message : '잠시 후 다시 시도해주세요.';
+      Alert.alert('변경 실패', message);
     } finally {
       setIsSubmitting(false);
     }
