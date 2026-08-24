@@ -35,6 +35,8 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="session-new" />
+        <Stack.Screen name="upload" />
         <Stack.Screen name="analysis" />
         <Stack.Screen name="result" />
       </Stack>
