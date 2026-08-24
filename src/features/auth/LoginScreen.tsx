@@ -1,6 +1,9 @@
+import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   KeyboardAvoidingView,
@@ -14,26 +17,63 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { exchangeOAuthCode, login } from '@/api/auth-api';
+import { API_BASE_URL } from '@/api/client';
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isSocialLoggingIn, setIsSocialLoggingIn] = useState(false);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('입력 확인', '이메일과 비밀번호를 입력해주세요.');
       return;
     }
 
-    router.replace('/(tabs)');
+    setIsLoggingIn(true);
+    try {
+      await login({ email, password });
+      router.replace('/(tabs)');
+    } catch {
+      Alert.alert('로그인 실패', '이메일 또는 비밀번호를 확인해주세요.');
+    } finally {
+      setIsLoggingIn(false);
+    }
   };
 
-  const handleKakaoLogin = () => {
-    Alert.alert('준비 중', '카카오 로그인은 준비 중입니다.');
+  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
+    setIsSocialLoggingIn(true);
+    try {
+      // TODO: redirectUri가 백엔드 FRONTEND_OAUTH_REDIRECT_BASE와 일치하는지 확인 필요
+      const redirectUri = Linking.createURL('oauth');
+      const authUrl = `${API_BASE_URL}/oauth2/authorization/${provider}`;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
+
+      if (result.type !== 'success' || !result.url) {
+        return;
+      }
+
+      const { queryParams } = Linking.parse(result.url);
+      const code = queryParams?.code;
+
+      if (typeof code !== 'string') {
+        Alert.alert('로그인 실패', '소셜 로그인에 실패했어요.');
+        return;
+      }
+
+      await exchangeOAuthCode(code);
+      router.replace('/(tabs)');
+    } catch {
+      Alert.alert('로그인 실패', '소셜 로그인 처리 중 문제가 발생했어요.');
+    } finally {
+      setIsSocialLoggingIn(false);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    Alert.alert('준비 중', '구글 로그인은 준비 중입니다.');
-  };
+  const handleKakaoLogin = () => handleSocialLogin('kakao');
+  const handleGoogleLogin = () => handleSocialLogin('google');
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -85,8 +125,12 @@ export default function LoginScreen() {
               secureTextEntry
             />
 
-            <Pressable style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>로그인</Text>
+            <Pressable style={styles.loginButton} onPress={handleLogin} disabled={isLoggingIn}>
+              {isLoggingIn ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.loginButtonText}>로그인</Text>
+              )}
             </Pressable>
 
             <View style={styles.dividerRow}>
@@ -95,7 +139,7 @@ export default function LoginScreen() {
               <View style={styles.divider} />
             </View>
 
-            <Pressable style={styles.kakaoButton} onPress={handleKakaoLogin}>
+            <Pressable style={styles.kakaoButton} onPress={handleKakaoLogin} disabled={isSocialLoggingIn}>
               <Image
                 source={require('../../../assets/images/kakao-icon.png')}
                 style={styles.socialIcon}
@@ -104,7 +148,7 @@ export default function LoginScreen() {
               <Text style={styles.kakaoButtonText}>카카오로 계속하기</Text>
             </Pressable>
 
-            <Pressable style={styles.googleButton} onPress={handleGoogleLogin}>
+            <Pressable style={styles.googleButton} onPress={handleGoogleLogin} disabled={isSocialLoggingIn}>
               <Image
                 source={require('../../../assets/images/google-icon.png')}
                 style={styles.socialIcon}
