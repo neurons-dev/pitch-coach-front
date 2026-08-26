@@ -49,8 +49,14 @@ export default function RecordingScreen() {
   useFocusEffect(
     useCallback(() => {
       return () => {
-        if (recorder.isRecording) {
-          recorder.stop().catch(() => {});
+        // 언마운트 시점에는 recorder 네이티브 객체가 이미 해제되어
+        // isRecording 접근만으로도 예외가 날 수 있어 try/catch로 감싼다.
+        try {
+          if (recorder.isRecording) {
+            recorder.stop().catch(() => {});
+          }
+        } catch {
+          // 이미 해제된 경우 정리할 녹음이 없으므로 무시한다.
         }
         setStatus('idle');
         setElapsedSeconds(0);
