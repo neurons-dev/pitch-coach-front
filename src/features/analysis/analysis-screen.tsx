@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getAnalysisProgress } from '@/api/analysis-api';
@@ -26,7 +26,7 @@ const PROGRESS_LABELS = [
   'AI 피드백 생성 중...',
 ];
 
-const POLL_INTERVAL_MS = 400;
+const POLL_INTERVAL_MS = 2000;
 
 function getStepStatus(stepIndex: number, activeStep: number) {
   if (stepIndex < activeStep) {
@@ -45,19 +45,35 @@ export default function AnalysisScreen() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    if (!analysisId) {
+      return;
+    }
+
     let cancelled = false;
 
-    // TODO(API): 백엔드가 웹소켓/SSE를 제공하면 폴링 대신 그걸 사용해도 된다.
     const interval = setInterval(async () => {
-      const { progress: next } = await getAnalysisProgress(analysisId ?? 'mock-analysis-id');
+      let next;
+      try {
+        next = await getAnalysisProgress(analysisId);
+      } catch {
+        // 일시적 네트워크/서버 오류는 다음 폴링에서 재시도한다.
+        return;
+      }
 
       if (cancelled) {
         return;
       }
 
-      setProgress(next);
+      if (next.status === 'failed' || next.status === 'cancelled') {
+        clearInterval(interval);
+        Alert.alert('분석 실패', next.errorMessage ?? '분석 중 문제가 발생했어요. 다시 시도해주세요.');
+        router.replace('/(tabs)' as never);
+        return;
+      }
 
-      if (next >= 100) {
+      setProgress(next.progress);
+
+      if (next.status === 'completed') {
         clearInterval(interval);
         setTimeout(() => {
           if (!cancelled) {

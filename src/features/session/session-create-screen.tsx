@@ -1,6 +1,6 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Keyboard,
@@ -13,17 +13,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { getPracticeTypes } from '@/api/practice-type-api';
 import { createSession } from '@/api/session-api';
-import type { PracticeTypeCode } from '@/types/analysis';
+import type { PracticeType, PracticeTypeCode } from '@/types/analysis';
 
 const RECORDING_TITLE = '자기소개 발표 연습';
 
 type SessionMode = 'record' | 'upload';
 
-const practiceTypeOptions: { code: PracticeTypeCode; label: string }[] = [
-  { code: 'INTERVIEW', label: '면접 발표' },
-  { code: 'PT', label: 'PT 발표' },
-  { code: 'SPEECH', label: '스피치/자유 발표' },
+/** API 로딩 전/실패 시에 쓰는 기본 발표 유형 목록. */
+const DEFAULT_PRACTICE_TYPES: PracticeType[] = [
+  { code: 'INTERVIEW', label: '면접형', recommendedMinSec: 180, recommendedMaxSec: 300 },
+  { code: 'PT', label: 'PT발표형', recommendedMinSec: 300, recommendedMaxSec: 480 },
+  { code: 'SPEECH', label: '스피치형', recommendedMinSec: 180, recommendedMaxSec: 300 },
 ];
 
 const modeCopy: Record<SessionMode, { heading: string; hint: string }> = {
@@ -42,9 +44,30 @@ export default function SessionCreateScreen() {
   const mode: SessionMode = modeParam === 'upload' ? 'upload' : 'record';
 
   const [title, setTitle] = useState(mode === 'record' ? RECORDING_TITLE : '');
+  const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>(DEFAULT_PRACTICE_TYPES);
   const [practiceTypeCode, setPracticeTypeCode] = useState<PracticeTypeCode | null>(null);
   const [targetMinutesText, setTargetMinutesText] = useState('');
   const [creatingSession, setCreatingSession] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getPracticeTypes()
+      .then((types) => {
+        if (!cancelled && types.length > 0) {
+          setPracticeTypes(types);
+        }
+      })
+      .catch(() => {
+        // 조회 실패 시 기본 목록을 그대로 사용한다.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectedType = practiceTypes.find((type) => type.code === practiceTypeCode);
 
   const goHome = () => {
     router.replace('/(tabs)' as never);
@@ -130,7 +153,7 @@ export default function SessionCreateScreen() {
 
           <Text style={styles.inputLabel}>발표 유형</Text>
           <View style={styles.typeOptions}>
-            {practiceTypeOptions.map((option) => {
+            {practiceTypes.map((option) => {
               const selected = practiceTypeCode === option.code;
               return (
                 <Pressable
@@ -165,7 +188,9 @@ export default function SessionCreateScreen() {
             editable={!creatingSession}
           />
           <Text style={styles.fieldHint}>
-            녹음 길이는 제한되지 않고, AI 분석 시 기준값으로만 사용돼요.
+            {selectedType
+              ? `${selectedType.label} 추천 시간은 ${Math.round(selectedType.recommendedMinSec / 60)}~${Math.round(selectedType.recommendedMaxSec / 60)}분이에요. 녹음 길이는 제한되지 않아요.`
+              : '녹음 길이는 제한되지 않고, AI 분석 시 기준값으로만 사용돼요.'}
           </Text>
 
           <Pressable

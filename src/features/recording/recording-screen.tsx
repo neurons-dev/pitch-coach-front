@@ -1,4 +1,5 @@
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { Redirect, router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -26,6 +27,7 @@ type RecordingStatus = 'idle' | 'recording' | 'paused';
 export default function RecordingScreen() {
   const navigation = useNavigation();
   const { sessionId, title } = useLocalSearchParams<{ sessionId?: string; title?: string }>();
+  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [status, setStatus] = useState<RecordingStatus>('idle');
@@ -47,6 +49,9 @@ export default function RecordingScreen() {
   useFocusEffect(
     useCallback(() => {
       return () => {
+        if (recorder.isRecording) {
+          recorder.stop().catch(() => {});
+        }
         setStatus('idle');
         setElapsedSeconds(0);
         setIsUploading(false);
@@ -54,7 +59,7 @@ export default function RecordingScreen() {
         setIsRequestingAnalysis(false);
         navigation.setParams({ sessionId: undefined, title: undefined } as never);
       };
-    }, [navigation]),
+    }, [navigation, recorder]),
   );
 
   useEffect(() => {
@@ -74,22 +79,61 @@ export default function RecordingScreen() {
     return <Redirect href={{ pathname: '/session-new', params: { mode: 'record' } } as never} />;
   }
 
-  const handleStart = () => {
-    // TODO(API): 실제 마이크 녹음 시작 (expo-audio 등) 연결 지점
-    setElapsedSeconds(0);
-    setStatus('recording');
+  const startRecording = async () => {
+    const permission = await AudioModule.requestRecordingPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('마이크 권한 필요', '발표 녹음을 위해 설정에서 마이크 권한을 허용해주세요.');
+      return false;
+    }
+
+    await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true });
+    await recorder.prepareToRecordAsync();
+    recorder.record();
+    return true;
   };
 
-  const handleRestart = () => {
-    setElapsedSeconds(0);
-    setStatus('recording');
+  const handleStart = async () => {
+    try {
+      if (!(await startRecording())) {
+        return;
+      }
+      setElapsedSeconds(0);
+      setStatus('recording');
+    } catch {
+      Alert.alert('녹음 시작 실패', '녹음을 시작하는 중 문제가 발생했어요. 다시 시도해주세요.');
+    }
+  };
+
+  const handleRestart = async () => {
+    try {
+      if (recorder.isRecording) {
+        await recorder.stop();
+      }
+      if (!(await startRecording())) {
+        return;
+      }
+      setElapsedSeconds(0);
+      setStatus('recording');
+    } catch {
+      Alert.alert('녹음 재시작 실패', '녹음을 다시 시작하는 중 문제가 발생했어요.');
+    }
+  };
+
+  const handleTogglePause = () => {
+    if (status === 'paused') {
+      recorder.record();
+      setStatus('recording');
+    } else {
+      recorder.pause();
+      setStatus('paused');
+    }
   };
 
   const goHome = () => {
     router.replace('/(tabs)' as never);
   };
 
-  // 녹음 종료 버튼: 2단계(파일 업로드)만 진행한다. 분석 요청은 별도 버튼으로 진행한다.
+  // 녹음 종료 버튼: 녹음을 마치고 2단계(파일 업로드)만 진행한다. 분석 요청은 별도 버튼으로 진행한다.
   const handleStop = async () => {
     if (isUploading || isUploaded) {
       return;
@@ -98,10 +142,16 @@ export default function RecordingScreen() {
     setStatus('paused');
     setIsUploading(true);
     try {
-      // TODO(API): 실제 녹음 오디오 파일(audioUri)을 함께 업로드하도록 교체
+      await recorder.stop();
+      const audioUri = recorder.uri;
+      if (!audioUri) {
+        throw new Error('녹음 파일 경로를 찾을 수 없습니다.');
+      }
+
       await uploadFileToSession(sessionId, {
-        uri: '',
-        name: title ?? '',
+        uri: audioUri,
+        name: 'recording.m4a',
+        mimeType: 'audio/x-m4a',
       });
       setIsUploaded(true);
     } catch {
@@ -195,9 +245,7 @@ export default function RecordingScreen() {
           ) : (
             <ControlBar
               isPaused={status === 'paused'}
-              onTogglePause={() =>
-                setStatus((current) => (current === 'paused' ? 'recording' : 'paused'))
-              }
+              onTogglePause={handleTogglePause}
               onStop={handleStop}
               onRestart={handleRestart}
             />

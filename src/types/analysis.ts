@@ -3,6 +3,41 @@ export type SessionId = string;
 /** 발표 유형 코드. */
 export type PracticeTypeCode = 'INTERVIEW' | 'PT' | 'SPEECH';
 
+/** GET /api/practice-types 응답 항목. */
+export type PracticeType = {
+  code: PracticeTypeCode;
+  label: string;
+  recommendedMinSec: number;
+  recommendedMaxSec: number;
+};
+
+export type PracticeSessionStatus =
+  | 'CREATED'
+  | 'UPLOADED'
+  | 'ANALYSIS_REQUESTED'
+  | 'COMPLETED'
+  | 'FAILED';
+
+/** Practice Session API 공통 응답 (생성/조회/업로드/분석 요청). */
+export type PracticeSession = {
+  id: SessionId;
+  title: string;
+  practiceTypeCode: PracticeTypeCode;
+  targetDurationSeconds: number | null;
+  status: PracticeSessionStatus;
+  audioOriginalName: string | null;
+  audioContentType: string | null;
+  audioSizeBytes: number | null;
+  durationMs: number | null;
+  recordedAt: string | null;
+  latestAnalysisJobId: string | null;
+  failureReason: string | null;
+  analysisCompletedAt: string | null;
+  overallScore: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 /** 세션 생성 시 입력받는 값. targetDurationSeconds는 이후 AI 분석의 기준값으로 사용된다. */
 export type CreateSessionParams = {
   title: string;
@@ -18,9 +53,14 @@ export type UploadedFile = {
   mimeType?: string;
 };
 
+/** analysis-service의 분석 작업 상태값. */
+export type AnalysisJobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
 export type AnalysisProgress = {
+  status: AnalysisJobStatus;
   /** 0~100 */
   progress: number;
+  errorMessage: string | null;
 };
 
 export type MetricKey =
