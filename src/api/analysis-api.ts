@@ -35,13 +35,36 @@ export async function getAnalysisResult(analysisId: string): Promise<AnalysisRes
   // return apiFetch<AnalysisResult>(`/analyses/${analysisId}/result`);
   await delay(400);
   return {
-    totalScore: 88,
-    comparedToAveragePercent: 20,
+    totalScore: 79,
     metrics: [
       { key: 'speed', label: '말 속도', score: 82 },
       { key: 'delivery', label: '전달력', score: 68 },
       { key: 'structure', label: '발표 구조', score: 95 },
       { key: 'fluency', label: '발표 유창성', score: 76 },
+      { key: 'pronunciation', label: '발음', score: 61 },
+      { key: 'fillerWords', label: '필러 단어 개수', score: 2, unit: '개', progress: 85 },
+    ],
+    coachComment:
+      '전반적으로 안정적인 발표였어요! 조금만 더 천천히 말하면 완벽해요. 조금만 더 연습하면 정말 멋진 발표자가 될 수 있을 거예요!',
+    improvements: [
+      {
+        tone: 'info',
+        title: '말 속도 조절',
+        description:
+          '분당 480음절로 다소 빠른 편이에요. 350~450음절을 목표로 조금만 천천히 말해보세요! 청중이 내용을 이해할 여유를 주세요.',
+      },
+      {
+        tone: 'warning',
+        title: '필러 단어 줄이기',
+        description:
+          '"어", "음" 같은 필러 단어가 총 12번 등장했어요. 말 사이 짧게 멈추는 연습이 도움이 될 거예요!',
+      },
+      {
+        tone: 'success',
+        title: '발표 구조 — 완벽해요!',
+        description:
+          '서론-본론-결론 구조가 명확해요. 특히 결론의 핵심 메시지 정리가 훌륭했어요. 이 구조를 계속 유지하세요!',
+      },
     ],
   };
 }
