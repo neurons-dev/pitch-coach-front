@@ -1,10 +1,9 @@
-import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -17,14 +16,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { exchangeOAuthCode, login } from '@/api/auth-api';
-import { API_BASE_URL } from '@/api/client';
+import { login } from '@/api/auth-api';
+
+const BASE_WIDTH = 390;
+const scale = Math.min(Math.max(Dimensions.get('window').width / BASE_WIDTH, 0.85), 1.15);
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [isSocialLoggingIn, setIsSocialLoggingIn] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -43,38 +43,6 @@ export default function LoginScreen() {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'kakao') => {
-    setIsSocialLoggingIn(true);
-    try {
-      // TODO: redirectUri가 백엔드 FRONTEND_OAUTH_REDIRECT_BASE와 일치하는지 확인 필요
-      const redirectUri = Linking.createURL('oauth');
-      const authUrl = `${API_BASE_URL}/oauth2/authorization/${provider}`;
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-
-      if (result.type !== 'success' || !result.url) {
-        return;
-      }
-
-      const { queryParams } = Linking.parse(result.url);
-      const code = queryParams?.code;
-
-      if (typeof code !== 'string') {
-        Alert.alert('로그인 실패', '소셜 로그인에 실패했어요.');
-        return;
-      }
-
-      await exchangeOAuthCode(code);
-      router.replace('/(tabs)');
-    } catch {
-      Alert.alert('로그인 실패', '소셜 로그인 처리 중 문제가 발생했어요.');
-    } finally {
-      setIsSocialLoggingIn(false);
-    }
-  };
-
-  const handleKakaoLogin = () => handleSocialLogin('kakao');
-  const handleGoogleLogin = () => handleSocialLogin('google');
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
@@ -88,21 +56,12 @@ export default function LoginScreen() {
               style={styles.character}
               resizeMode="contain"
             />
-
             <Text style={styles.brand}>
               <Text style={styles.brandPointOne}>P</Text>
-              <Text>resentation </Text>
+              <Text>itch </Text>
               <Text style={styles.brandPointTwo}>C</Text>
               <Text>oach</Text>
             </Text>
-
-            <Text style={styles.subtitle}>발표가 자신감으로 바뀌는 순간</Text>
-
-            <Image
-              source={require('../../../assets/images/pc-logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
           </View>
 
           <View style={styles.form}>
@@ -133,30 +92,6 @@ export default function LoginScreen() {
               )}
             </Pressable>
 
-            <View style={styles.dividerRow}>
-              <View style={styles.divider} />
-              <Text style={styles.dividerText}>또는</Text>
-              <View style={styles.divider} />
-            </View>
-
-            <Pressable style={styles.kakaoButton} onPress={handleKakaoLogin} disabled={isSocialLoggingIn}>
-              <Image
-                source={require('../../../assets/images/kakao-icon.png')}
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.kakaoButtonText}>카카오로 계속하기</Text>
-            </Pressable>
-
-            <Pressable style={styles.googleButton} onPress={handleGoogleLogin} disabled={isSocialLoggingIn}>
-              <Image
-                source={require('../../../assets/images/google-icon.png')}
-                style={styles.socialIcon}
-                resizeMode="contain"
-              />
-              <Text style={styles.googleButtonText}>구글로 계속하기</Text>
-            </Pressable>
-
             <Pressable style={styles.signupButton} onPress={() => router.push('/signup')}>
               <Text style={styles.signupText}>
                 계정이 없으신가요? <Text style={styles.signupLink}>회원가입</Text>
@@ -179,18 +114,19 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 40,
     backgroundColor: '#FFFFFF',
   },
   hero: {
     alignItems: 'center',
-    paddingTop: 28,
-    paddingBottom: 24,
-    backgroundColor: '#EAF1FE',
+    marginBottom: 36,
   },
   character: {
-    width: 132,
-    height: 139,
-    marginBottom: 8,
+    width: 120 * scale,
+    height: 126 * scale,
+    marginBottom: 16,
   },
   brand: {
     fontFamily: 'Nunito_900Black',
@@ -203,32 +139,19 @@ const styles = StyleSheet.create({
   brandPointTwo: {
     color: '#6B99FF',
   },
-  subtitle: {
-    fontFamily: 'NotoSansKR_700Bold',
-    marginTop: 6,
-    fontSize: 13,
-    color: '#2F6FED',
-  },
-  logo: {
-    width: 88,
-    height: 88,
-    marginTop: 16,
-  },
   form: {
-    paddingHorizontal: 24,
-    paddingTop: 22,
-    paddingBottom: 24,
+    width: '100%',
   },
   input: {
     height: 52,
     paddingHorizontal: 18,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: '#E5E9F5',
-    borderRadius: 16,
-    backgroundColor: '#F7F9FC',
-    fontFamily: 'NotoSansKR_600SemiBold',
-    fontSize: 14,
+    borderWidth: 1.5,
+    borderColor: '#DFE7F3',
+    borderRadius: 15,
+    backgroundColor: '#FBFCFF',
+    fontSize: 15,
+    fontWeight: '700',
     color: '#1F2430',
   },
   loginButton: {
@@ -236,81 +159,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 4,
-    borderRadius: 16,
-    backgroundColor: '#2F6FED',
+    borderRadius: 14,
+    backgroundColor: '#3474F6',
     borderBottomWidth: 5,
-    borderBottomColor: '#1849A8',
+    borderBottomColor: '#1954D8',
   },
   loginButtonText: {
-    fontFamily: 'NotoSansKR_900Black',
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: '800',
     color: '#FFFFFF',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginVertical: 18,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E5E9F5',
-  },
-  dividerText: {
-    fontFamily: 'NotoSansKR_700Bold',
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
-  kakaoButton: {
-    flexDirection: 'row',
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    marginBottom: 12,
-    borderRadius: 16,
-    backgroundColor: '#FEE500',
-    borderBottomWidth: 5,
-    borderBottomColor: '#D4B800',
-  },
-  kakaoButtonText: {
-    fontFamily: 'NotoSansKR_900Black',
-    fontSize: 14,
-    color: '#1F2430',
-  },
-  googleButton: {
-    flexDirection: 'row',
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    borderWidth: 2,
-    borderColor: '#E5E9F5',
-    borderBottomWidth: 6,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-  },
-  googleButtonText: {
-    fontFamily: 'NotoSansKR_900Black',
-    fontSize: 14,
-    color: '#1F2430',
-  },
-  socialIcon: {
-    width: 18,
-    height: 18,
   },
   signupButton: {
     paddingVertical: 18,
   },
   signupText: {
-    fontFamily: 'NotoSansKR_600SemiBold',
     textAlign: 'center',
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 13,
+    color: '#9AA3B2',
   },
   signupLink: {
-    fontFamily: 'NotoSansKR_900Black',
-    color: '#2F6FED',
+    fontWeight: '800',
+    color: '#3474F6',
   },
 });

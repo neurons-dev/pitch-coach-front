@@ -1,9 +1,10 @@
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
+import { RecordingColors } from '@/constants/recording-theme';
 import { getRecentAnalyses } from '@/api/history-api';
 import type { HistoryItem } from '@/types/history';
 
@@ -54,57 +55,54 @@ export default function HomeScreen() {
     router.push({ pathname: '/session-new', params: { mode: 'upload' } } as never);
   };
 
+    const goToHistory = () => {
+    router.push('/(tabs)/history' as never);
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>안녕하세요, 발표자님!</Text>
-            <Text style={styles.title}>오늘도 멋진 발표{'\n'}준비해요</Text>
-          </View>
-
-          <View style={styles.headerActions}>
-            <View style={styles.streakBadge}>
-              <Text style={styles.streakText}>🔥 7일</Text>
-            </View>
-            <Pressable style={styles.notificationButton}>
-              <Text style={styles.notificationIcon}>⌾</Text>
-            </Pressable>
-          </View>
+          <Text style={styles.greeting}>안녕하세요, 발표자님!</Text>
+          <Text style={styles.subtitle}>오늘도 멋진 발표를 준비해요.</Text>
         </View>
 
         <View style={styles.analysisCard}>
-          <View style={styles.characterWrap}>
-            <Text style={styles.sparkleLeft}>✦</Text>
-            <Image
-              source={require('../../../assets/images/login-character.png')}
-              style={styles.character}
-              contentFit="contain"
-            />
-            <Text style={styles.sparkleRight}>✦</Text>
+          <View style={styles.cardHeader}>
+            <View style={styles.characterWrap}>
+              <Image
+                source={require('../../../assets/images/login-character.png')}
+                style={styles.character}
+                contentFit="contain"
+              />
+            </View>
+
+            <View style={styles.cardTextWrap}>
+              <Text style={styles.cardTitle}>새 발표 분석하기</Text>
+              <Text style={styles.cardDescription}>
+                발표 음성을 녹음하거나{'\n'}파일을 업로드해주세요
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>발표 분석하기</Text>
-            <Text style={styles.cardDescription}>발표를 녹음하고 피드백해드릴게요</Text>
-
+          <View style={styles.actionRow}>
             <Pressable style={styles.actionButton} onPress={handleStartRecording}>
-              <Text style={styles.actionText}>마이크 녹음 시작</Text>
+              <MaterialIcons name="mic" size={18} color="#1F2937" />
+              <Text style={styles.actionText}>녹음 시작</Text>
             </Pressable>
 
             <Pressable style={styles.actionButton} onPress={handleFileUpload}>
+              <MaterialIcons name="upload" size={18} color="#1F2937" />
               <Text style={styles.actionText}>파일 업로드</Text>
             </Pressable>
           </View>
         </View>
 
         <View style={styles.recentCard}>
-          <View style={styles.sectionHeader}>
+          <Pressable style={styles.sectionHeader} onPress={goToHistory}>
             <Text style={styles.sectionTitle}>최근 분석 결과</Text>
-            <Pressable onPress={() => router.push('/(tabs)/history' as never)}>
-              <Text style={styles.moreText}>전체 보기 &gt;</Text>
-            </Pressable>
-          </View>
+            <Text style={styles.sectionChevron}>&gt;</Text>
+          </Pressable>
 
           {recentAnalyses.length === 0 && (
             <Text style={styles.emptyText}>아직 분석 기록이 없어요. 첫 발표 연습을 시작해보세요!</Text>
@@ -138,129 +136,90 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F8FF',
+    backgroundColor: RecordingColors.screen,
   },
   content: {
+    flexGrow: 1,
+    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingTop: 28,
-    paddingBottom: 26,
+    paddingVertical: 32,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    marginBottom: 18,
+    marginBottom: 20,
   },
   greeting: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#1F2937',
     marginBottom: 6,
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#5F6B7A',
   },
-  title: {
-    fontSize: 23,
-    fontWeight: '900',
-    lineHeight: 31,
-    color: '#1F2937',
-  },
-  headerActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  streakBadge: {
-    height: 33,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    borderWidth: 1.5,
-    borderColor: '#F8B833',
-    borderRadius: 18,
-    backgroundColor: '#FFFFFF',
-  },
-  streakText: {
-    fontSize: 13,
-    fontWeight: '900',
-    color: '#F59E0B',
-  },
-  notificationButton: {
-    width: 34,
-    height: 34,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E3EAF5',
-    borderRadius: 17,
-    backgroundColor: '#FFFFFF',
-  },
-  notificationIcon: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#1F2937',
+  subtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
   },
   analysisCard: {
+    padding: 20,
+    borderRadius: 20,
+    backgroundColor: '#3474F6',
+  },
+  cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 16,
-    padding: 18,
-    borderRadius: 16,
-    backgroundColor: '#3474F6',
+    marginBottom: 18,
   },
   characterWrap: {
-    width: 116,
-    height: 128,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.16)',
   },
   character: {
-    width: 112,
-    height: 112,
+    width: 64,
+    height: 64,
+    marginLeft: 4,
   },
-  sparkleLeft: {
-    position: 'absolute',
-    top: 22,
-    left: 0,
-    fontSize: 15,
-    color: '#FFFFFF',
-  },
-  sparkleRight: {
-    position: 'absolute',
-    top: 16,
-    right: 4,
-    fontSize: 17,
-    color: '#FFFFFF',
-  },
-  cardContent: {
+  cardTextWrap: {
     flex: 1,
   },
   cardTitle: {
-    marginBottom: 6,
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '900',
     color: '#FFFFFF',
+    marginBottom: 8,
   },
   cardDescription: {
-    marginBottom: 13,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
     color: '#DDE9FF',
+    lineHeight: 19,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 10,
   },
   actionButton: {
-    height: 34,
+    flex: 1,
+    height: 50,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
-    borderRadius: 5,
+    gap: 6,
+    borderRadius: 14,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 3,
+    borderBottomWidth: 4,
     borderBottomColor: '#D8E2F2',
   },
   actionText: {
-    fontSize: 13,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '800',
     color: '#1F2937',
   },
   recentCard: {
-    marginTop: 30,
+    marginTop: 24,
     paddingHorizontal: 18,
     paddingTop: 18,
     paddingBottom: 10,
@@ -271,17 +230,18 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 4,
     marginBottom: 17,
   },
   sectionTitle: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '900',
-    color: '#6B7280',
+    color: '#374151',
   },
-  moreText: {
-    fontSize: 11,
-    fontWeight: '800',
+  sectionChevron: {
+    fontSize: 13,
+    fontWeight: '900',
     color: '#A1AAB8',
   },
   emptyText: {
