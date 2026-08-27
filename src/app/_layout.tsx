@@ -39,6 +39,10 @@ export default function RootLayout() {
         <Stack.Screen name="upload" />
         <Stack.Screen name="analysis" />
         <Stack.Screen name="result" />
+        <Stack.Screen name="password-change" />
+        <Stack.Screen name="terms" />
+        <Stack.Screen name="privacy" />
+        <Stack.Screen name="account-deletion" />
       </Stack>
 
       <StatusBar style="auto" />

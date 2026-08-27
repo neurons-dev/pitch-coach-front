@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { RecordingColors } from '@/constants/recording-theme';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { getRecentAnalyses } from '@/api/history-api';
 import type { HistoryItem } from '@/types/history';
 
@@ -24,6 +25,7 @@ function formatItemDate(item: HistoryItem) {
 }
 
 export default function HomeScreen() {
+  const { name } = useCurrentUser();
   const [recentAnalyses, setRecentAnalyses] = useState<HistoryItem[]>([]);
 
   // 홈에 들어올 때마다 최근 분석 결과를 새로 고침한다.
@@ -55,7 +57,7 @@ export default function HomeScreen() {
     router.push({ pathname: '/session-new', params: { mode: 'upload' } } as never);
   };
 
-    const goToHistory = () => {
+  const goToHistory = () => {
     router.push('/(tabs)/history' as never);
   };
 
@@ -63,7 +65,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.greeting}>안녕하세요, 발표자님!</Text>
+          <Text style={styles.greeting}>안녕하세요, {name ?? '발표자'}님!</Text>
           <Text style={styles.subtitle}>오늘도 멋진 발표를 준비해요.</Text>
         </View>
 
@@ -103,7 +105,6 @@ export default function HomeScreen() {
             <Text style={styles.sectionTitle}>최근 분석 결과</Text>
             <Text style={styles.sectionChevron}>&gt;</Text>
           </Pressable>
-
           {recentAnalyses.length === 0 && (
             <Text style={styles.emptyText}>아직 분석 기록이 없어요. 첫 발표 연습을 시작해보세요!</Text>
           )}

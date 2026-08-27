@@ -5,9 +5,18 @@ export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, path: string) {
-    super(`API 요청 실패: ${status} ${path}`);
+  constructor(status: number, path: string, message?: string) {
+    super(message ?? `API 요청 실패: ${status} ${path}`);
     this.status = status;
+  }
+}
+
+async function extractErrorMessage(response: Response): Promise<string | undefined> {
+  try {
+    const body = (await response.json()) as { message?: string };
+    return body.message;
+  } catch {
+    return undefined;
   }
 }
 
@@ -65,7 +74,7 @@ export async function apiFetch<T>(path: string, options?: RequestInit): Promise<
     }
   }
   if (!response.ok) {
-    throw new ApiError(response.status, path);
+    throw new ApiError(response.status, path, await extractErrorMessage(response));
   }
   if (response.status === 204) {
     return undefined as T;
