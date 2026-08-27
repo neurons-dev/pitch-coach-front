@@ -2,7 +2,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { AudioModule, RecordingPresets, setAudioModeAsync, useAudioRecorder } from 'expo-audio';
 import { Redirect, router, useFocusEffect, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { requestAnalysis, uploadFileToSession } from '@/api/session-api';
@@ -11,6 +11,13 @@ import { ControlBar } from '@/components/recording/control-bar';
 import { WaveformVisualizer } from '@/components/recording/waveform-visualizer';
 import { TipBanner } from '@/components/tip-banner';
 import { RecordingColors } from '@/constants/recording-theme';
+
+// 작은 화면(iPhone SE 등)에서는 팁 배너를 숨겨 하단 컨트롤이 잘리지 않게 한다.
+const COMPACT_HEIGHT_THRESHOLD = 700;
+
+// 캐릭터 크기는 화면 높이에 비례해서 조절한다. 기준 높이는 iPhone 13 Pro(844).
+const MASCOT_REFERENCE_HEIGHT = 844;
+const MASCOT_MIN_SCALE = 0.72;
 
 function formatTimer(totalSeconds: number) {
   const hours = Math.floor(totalSeconds / 3600);
@@ -26,6 +33,9 @@ type RecordingStatus = 'idle' | 'recording' | 'paused';
 
 export default function RecordingScreen() {
   const navigation = useNavigation();
+  const { height: windowHeight } = useWindowDimensions();
+  const isCompact = windowHeight < COMPACT_HEIGHT_THRESHOLD;
+  const mascotScale = Math.min(1, Math.max(MASCOT_MIN_SCALE, windowHeight / MASCOT_REFERENCE_HEIGHT));
   const { sessionId, title } = useLocalSearchParams<{ sessionId?: string; title?: string }>();
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
@@ -177,7 +187,11 @@ export default function RecordingScreen() {
     try {
       const { analysisId } = await requestAnalysis(sessionId);
       router.push({ pathname: '/analysis', params: { analysisId } } as never);
-    } catch {
+    } catch (error) {
+      console.log('[DEBUG] requestAnalysis error', {
+        message: (error as any)?.message,
+        status: (error as any)?.status,
+      });
       Alert.alert('분석 요청 실패', '분석을 요청하는 중 문제가 발생했어요. 다시 시도해주세요.');
     } finally {
       setIsRequestingAnalysis(false);
@@ -186,7 +200,7 @@ export default function RecordingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.contentCard}>
+      <View style={styles.content}>
         <View style={styles.header}>
           <Pressable
             accessibilityRole="button"
@@ -205,15 +219,17 @@ export default function RecordingScreen() {
         </View>
 
         <Text style={styles.title}>{title}</Text>
-        <Text style={styles.timer}>{formatTimer(elapsedSeconds)}</Text>
+        <Text style={[styles.timer, isCompact && styles.timerCompact]}>
+          {formatTimer(elapsedSeconds)}
+        </Text>
 
         <WaveformVisualizer active={status === 'recording'} />
 
-        <View style={styles.mascotContainer}>
-          <MascotIllustration />
+        <View style={[styles.mascotContainer, isCompact && styles.mascotContainerCompact]}>
+          <MascotIllustration scale={mascotScale} />
         </View>
 
-        <TipBanner />
+        {!isCompact && <TipBanner />}
 
         <View style={styles.controls}>
           {status === 'idle' ? (
@@ -266,26 +282,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: RecordingColors.screen,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
   },
-  contentCard: {
+  content: {
     flex: 1,
-    backgroundColor: RecordingColors.background,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: RecordingColors.cardBorder,
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    shadowColor: RecordingColors.cardGlow,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 6,
+    paddingHorizontal: 24,
+    paddingTop: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
   },
   backButton: {
@@ -294,7 +300,7 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: RecordingColors.controlSecondary,
+    backgroundColor: RecordingColors.backButton,
   },
   recBadge: {
     flexDirection: 'row',
@@ -314,20 +320,24 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   title: {
-    marginTop: 32,
+    marginTop: 40,
     textAlign: 'center',
     color: RecordingColors.textPrimary,
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
   },
   timer: {
-    marginTop: 18,
+    marginTop: 20,
     textAlign: 'center',
     color: RecordingColors.textPrimary,
-    fontSize: 42,
+    fontSize: 48,
     fontWeight: '800',
     letterSpacing: 1,
     fontVariant: ['tabular-nums'],
+  },
+  timerCompact: {
+    marginTop: 10,
+    fontSize: 32,
   },
   mascotContainer: {
     flex: 1,
@@ -335,12 +345,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 160,
   },
+  mascotContainerCompact: {
+    minHeight: 90,
+  },
   controls: {
     marginTop: 'auto',
   },
   startArea: {
     alignItems: 'center',
-    paddingTop: 8,
+    paddingTop: 24,
     paddingBottom: 36,
   },
   startButton: {

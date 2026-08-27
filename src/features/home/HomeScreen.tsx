@@ -106,7 +106,15 @@ export default function HomeScreen() {
             <Text style={styles.sectionChevron}>&gt;</Text>
           </Pressable>
           {recentAnalyses.length === 0 && (
-            <Text style={styles.emptyText}>아직 분석 기록이 없어요. 첫 발표 연습을 시작해보세요!</Text>
+            <View style={styles.emptyState}>
+              <View style={styles.emptyIconBadge}>
+                <View style={styles.emptyDot} />
+                <View style={styles.emptyDot} />
+                <View style={styles.emptyDot} />
+              </View>
+              <Text style={styles.emptyTitle}>아직 분석 기록이 없어요</Text>
+              <Text style={styles.emptyHint}>첫 발표 연습을 시작해보세요!</Text>
+            </View>
           )}
 
           {recentAnalyses.map((item) => (
@@ -141,9 +149,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 32,
+    paddingTop: 48,
+    paddingBottom: 32,
   },
   header: {
     marginBottom: 20,
@@ -245,11 +253,36 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     color: '#A1AAB8',
   },
-  emptyText: {
+  emptyState: {
+    alignItems: 'center',
     paddingVertical: 20,
-    textAlign: 'center',
+  },
+  emptyIconBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    marginBottom: 18,
+    backgroundColor: RecordingColors.tipBackground,
+  },
+  emptyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#9DAEC9',
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#374151',
+    marginBottom: 4,
+  },
+  emptyHint: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#98A3B3',
   },
   analysisItem: {

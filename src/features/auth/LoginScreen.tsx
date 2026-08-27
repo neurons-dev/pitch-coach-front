@@ -3,7 +3,6 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -12,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,9 +19,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { login } from '@/api/auth-api';
 
 const BASE_WIDTH = 390;
-const scale = Math.min(Math.max(Dimensions.get('window').width / BASE_WIDTH, 0.85), 1.15);
 
 export default function LoginScreen() {
+  const { width: windowWidth } = useWindowDimensions();
+  const scale = Math.min(Math.max(windowWidth / BASE_WIDTH, 0.85), 1.15);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -53,7 +55,7 @@ export default function LoginScreen() {
           <View style={styles.hero}>
             <Image
               source={require('../../../assets/images/login-character.png')}
-              style={styles.character}
+              style={[styles.character, { width: 120 * scale, height: 126 * scale }]}
               resizeMode="contain"
             />
             <Text style={styles.brand}>
@@ -124,8 +126,6 @@ const styles = StyleSheet.create({
     marginBottom: 36,
   },
   character: {
-    width: 120 * scale,
-    height: 126 * scale,
     marginBottom: 16,
   },
   brand: {

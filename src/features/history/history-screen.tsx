@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from '
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { getGrowthHistory } from '@/api/history-api';
+import { RecordingColors } from '@/constants/recording-theme';
 import type { HistoryItem } from '@/types/history';
 
 function scoreColor(score: number) {
@@ -27,17 +28,25 @@ function formatDuration(totalSeconds: number) {
 
 export default function HistoryScreen() {
   const [items, setItems] = useState<HistoryItem[] | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   // 탭에 들어올 때마다 새로 고침해서 방금 마친 연습도 목록에 반영한다.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+      setHasError(false);
 
-      getGrowthHistory().then((data) => {
-        if (!cancelled) {
-          setItems(data);
-        }
-      });
+      getGrowthHistory()
+        .then((data) => {
+          if (!cancelled) {
+            setItems(data);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setHasError(true);
+          }
+        });
 
       return () => {
         cancelled = true;
@@ -46,21 +55,40 @@ export default function HistoryScreen() {
   );
 
   const openResult = (item: HistoryItem) => {
-    router.push({ pathname: '/result', params: { analysisId: item.analysisId } } as never);
+    router.push({
+      pathname: '/result',
+      params: { analysisId: item.analysisId, origin: 'history' },
+    } as never);
   };
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <Text style={styles.title}>성장 히스토리</Text>
-
-      {items === null ? (
+      {hasError ? (
+        <View style={styles.loading}>
+          <Text style={styles.emptyText}>목록을 불러오지 못했어요.</Text>
+          <Text style={styles.emptyHint}>잠시 후 다시 시도해주세요.</Text>
+        </View>
+      ) : items === null ? (
         <View style={styles.loading}>
           <ActivityIndicator size="large" color="#3D6DF5" />
         </View>
       ) : items.length === 0 ? (
         <View style={styles.loading}>
+          <View style={styles.emptyIconBadge}>
+            <MaterialIcons name="show-chart" size={28} color="#8CA0C7" />
+          </View>
           <Text style={styles.emptyText}>아직 연습 기록이 없어요.</Text>
           <Text style={styles.emptyHint}>첫 발표 연습을 시작해보세요!</Text>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              router.push({ pathname: '/session-new', params: { mode: 'record' } } as never)
+            }
+            style={({ pressed }) => [styles.emptyButton, pressed && styles.pressed]}>
+            <MaterialIcons name="mic" size={16} color="#FFFFFF" />
+            <Text style={styles.emptyButtonText}>첫 발표 연습하러 가기</Text>
+          </Pressable>
         </View>
       ) : (
         <FlatList
@@ -100,21 +128,22 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F8FF',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#1F2937',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 8,
+    backgroundColor: RecordingColors.screen,
   },
   loading: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
+  },
+  emptyIconBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+    backgroundColor: RecordingColors.tipBackground,
   },
   emptyText: {
     fontSize: 16,
@@ -126,8 +155,24 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#8A94A6',
   },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingHorizontal: 22,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: RecordingColors.primary,
+  },
+  emptyButtonText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
   listContent: {
     paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 24,
   },
   row: {

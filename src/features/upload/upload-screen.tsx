@@ -126,7 +126,7 @@ export default function UploadScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F8FF',
+    backgroundColor: '#F4F8FC',
   },
   header: {
     paddingHorizontal: 20,
@@ -138,9 +138,7 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E3EAF5',
+    backgroundColor: '#F5F8FF',
   },
   content: {
     flex: 1,

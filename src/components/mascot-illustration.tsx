@@ -2,6 +2,10 @@ import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 const MASCOT_SOURCE = require('../../assets/images/pcicon.png');
+const MASCOT_RECORDING_SOURCE = require('../../assets/images/mascot-recording.png');
+const MASCOT_RECORDING_GRAY_SOURCE = require('../../assets/images/mascot-recording-gray.png');
+const MASCOT_RECORDING_RATIO = 822 / 711;
+const MASCOT_RECORDING_WIDTH = 210;
 
 const COLS = 4;
 const ROWS = 2;
@@ -15,12 +19,32 @@ const VISIBLE_RATIO = 0.76;
 type MascotIllustrationProps = {
   variantIndex?: number;
   size?: 'md' | 'sm';
+  // 화면 높이에 맞춰 세밀하게 크기를 조절하고 싶을 때 size 대신 사용한다.
+  scale?: number;
+  tone?: 'color' | 'gray';
 };
 
-export function MascotIllustration({ variantIndex = 0, size = 'md' }: MascotIllustrationProps) {
+export function MascotIllustration({
+  variantIndex = 0,
+  size = 'md',
+  scale: scaleProp,
+  tone = 'color',
+}: MascotIllustrationProps) {
+  const scale = scaleProp ?? (size === 'sm' ? 0.72 : 1);
+
+  if (variantIndex === 0) {
+    const width = MASCOT_RECORDING_WIDTH * scale;
+    return (
+      <Image
+        source={tone === 'gray' ? MASCOT_RECORDING_GRAY_SOURCE : MASCOT_RECORDING_SOURCE}
+        style={{ width, height: width / MASCOT_RECORDING_RATIO }}
+        contentFit="contain"
+      />
+    );
+  }
+
   const column = variantIndex % COLS;
   const row = Math.floor(variantIndex / COLS);
-  const scale = size === 'sm' ? 0.72 : 1;
 
   return (
     <View

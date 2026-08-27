@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 32,
-    paddingTop: 8,
+    paddingTop: 24,
     paddingBottom: 36,
   },
   secondaryButton: {

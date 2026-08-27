@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import {
   Alert,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableWithoutFeedback,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -28,14 +30,16 @@ const DEFAULT_PRACTICE_TYPES: PracticeType[] = [
   { code: 'SPEECH', label: '스피치형', recommendedMinSec: 180, recommendedMaxSec: 300 },
 ];
 
-const modeCopy: Record<SessionMode, { heading: string; hint: string }> = {
+const modeCopy: Record<SessionMode, { heading: string; hint: string; submitLabel: string }> = {
   record: {
-    heading: '녹음할 발표 세션을 만들어요',
-    hint: '제목과 발표 유형, 목표 발표시간을 입력하고 세션을 생성하면 바로 녹음을 시작할 수 있어요.',
+    heading: '발표 녹음을 시작할게요',
+    hint: '제목과 발표 유형, 목표 시간을 입력하면 바로 녹음을 시작할 수 있어요.',
+    submitLabel: '녹음하러 가기',
   },
   upload: {
-    heading: '업로드할 분석 세션을 만들어요',
-    hint: '제목과 발표 유형, 목표 발표시간을 입력하고 세션을 생성하면 파일을 업로드할 수 있어요.',
+    heading: '분석할 파일을 준비할게요',
+    hint: '제목과 발표 유형, 목표 시간을 입력하면 파일을 업로드할 수 있어요.',
+    submitLabel: '파일 선택하러 가기',
   },
 };
 
@@ -43,7 +47,7 @@ export default function SessionCreateScreen() {
   const { mode: modeParam } = useLocalSearchParams<{ mode?: string }>();
   const mode: SessionMode = modeParam === 'upload' ? 'upload' : 'record';
 
-  const [title, setTitle] = useState(mode === 'record' ? RECORDING_TITLE : '');
+  const [title, setTitle] = useState('');
   const [practiceTypes, setPracticeTypes] = useState<PracticeType[]>(DEFAULT_PRACTICE_TYPES);
   const [practiceTypeCode, setPracticeTypeCode] = useState<PracticeTypeCode | null>(null);
   const [targetMinutesText, setTargetMinutesText] = useState('');
@@ -115,7 +119,7 @@ export default function SessionCreateScreen() {
         } as never);
       }
     } catch {
-      Alert.alert('세션 생성 실패', '세션을 만드는 중 문제가 발생했어요. 다시 시도해주세요.');
+      Alert.alert('저장 실패', '정보를 저장하는 중 문제가 발생했어요. 다시 시도해주세요.');
     } finally {
       setCreatingSession(false);
     }
@@ -135,9 +139,14 @@ export default function SessionCreateScreen() {
         </Pressable>
       </View>
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-        <View style={styles.content}>
-          <Text style={styles.stepLabel}>1단계 · 세션 생성</Text>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag">
           <Text style={styles.heading}>{copy.heading}</Text>
           <Text style={styles.hint}>{copy.hint}</Text>
 
@@ -146,7 +155,7 @@ export default function SessionCreateScreen() {
             style={styles.titleInput}
             value={title}
             onChangeText={setTitle}
-            placeholder="발표 제목을 입력하세요"
+            placeholder={mode === 'record' ? `예: ${RECORDING_TITLE}` : '발표 제목을 입력하세요'}
             placeholderTextColor="#A1AAB8"
             editable={!creatingSession}
           />
@@ -184,7 +193,7 @@ export default function SessionCreateScreen() {
             placeholderTextColor="#A1AAB8"
             keyboardType="numeric"
             returnKeyType="done"
-            onSubmitEditing={Keyboard.dismiss}
+            onSubmitEditing={() => Keyboard.dismiss()}
             editable={!creatingSession}
           />
           <Text style={styles.fieldHint}>
@@ -203,11 +212,11 @@ export default function SessionCreateScreen() {
               pressed && styles.pressed,
             ]}>
             <Text style={styles.createButtonText}>
-              {creatingSession ? '세션 생성 중...' : '세션 생성'}
+              {creatingSession ? '잠시만요...' : copy.submitLabel}
             </Text>
           </Pressable>
-        </View>
-      </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -215,7 +224,10 @@ export default function SessionCreateScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F5F8FF',
+    backgroundColor: '#F4F8FC',
+  },
+  keyboardView: {
+    flex: 1,
   },
   header: {
     paddingHorizontal: 20,
@@ -227,20 +239,13 @@ const styles = StyleSheet.create({
     borderRadius: 21,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E3EAF5',
+    backgroundColor: '#F5F8FF',
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 24,
-    paddingTop: 40,
-  },
-  stepLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#3474F6',
-    marginBottom: 10,
+    paddingTop: 28,
+    paddingBottom: 32,
   },
   heading: {
     fontSize: 22,

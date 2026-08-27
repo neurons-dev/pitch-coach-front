@@ -92,7 +92,7 @@ const IMPROVEMENT_STYLE: Record<ImprovementTone, ImprovementStyle> = {
 };
 
 export default function ResultScreen() {
-  const { analysisId } = useLocalSearchParams<{ analysisId?: string }>();
+  const { analysisId, origin } = useLocalSearchParams<{ analysisId?: string; origin?: string }>();
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   useEffect(() => {
@@ -109,9 +109,16 @@ export default function ResultScreen() {
     };
   }, [analysisId]);
 
+  // 히스토리에서 들어온 경우에만 히스토리 목록으로 돌아간다.
+  // 녹음/업로드 후 분석 흐름으로 들어온 경우에는 중간 화면(세션 생성, 녹음, 업로드)에
+  // 남아있는 이전 상태로 돌아가지 않도록 항상 홈으로 이동한다.
   const goBack = () => {
-    if (router.canGoBack()) {
-      router.back();
+    if (origin === 'history') {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/history' as never);
+      }
     } else {
       router.replace('/(tabs)' as never);
     }
