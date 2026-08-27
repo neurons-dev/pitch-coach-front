@@ -1,21 +1,11 @@
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-type RecentAnalysis = {
-  id: number;
-  title: string;
-  date: string;
-  score: number;
-};
-
-const recentAnalyses: RecentAnalysis[] = [
-  { id: 1, title: '면접 발표 연습', date: '2025.07.10 · 5분 23초', score: 85 },
-  { id: 2, title: '자기소개 발표 연습', date: '2025.07.10 · 5분 23초', score: 70 },
-  { id: 3, title: '면접 발표 연습', date: '2025.07.10 · 5분 23초', score: 94 },
-  { id: 4, title: '면접 발표 연습', date: '2025.07.10 · 5분 23초', score: 51 },
-];
+import { getRecentAnalyses } from '@/api/history-api';
+import type { HistoryItem } from '@/types/history';
 
 function getScoreColor(score: number) {
   if (score >= 90) return '#45C71B';
@@ -24,7 +14,38 @@ function getScoreColor(score: number) {
   return '#EF3340';
 }
 
+function formatItemDate(item: HistoryItem) {
+  const date = item.practicedAt.replaceAll('-', '.');
+  const minutes = Math.floor(item.durationSeconds / 60);
+  const seconds = item.durationSeconds % 60;
+  const duration = minutes === 0 ? `${seconds}초` : `${minutes}분 ${seconds}초`;
+  return `${date} · ${duration}`;
+}
+
 export default function HomeScreen() {
+  const [recentAnalyses, setRecentAnalyses] = useState<HistoryItem[]>([]);
+
+  // 홈에 들어올 때마다 최근 분석 결과를 새로 고침한다.
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+
+      getRecentAnalyses(4)
+        .then((items) => {
+          if (!cancelled) {
+            setRecentAnalyses(items);
+          }
+        })
+        .catch(() => {
+          // 조회 실패 시 기존 목록을 유지한다.
+        });
+
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
   const handleStartRecording = () => {
     router.push({ pathname: '/session-new', params: { mode: 'record' } } as never);
   };
@@ -80,20 +101,33 @@ export default function HomeScreen() {
         <View style={styles.recentCard}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>최근 분석 결과</Text>
-            <Text style={styles.moreText}>전체 보기 &gt;</Text>
+            <Pressable onPress={() => router.push('/(tabs)/history' as never)}>
+              <Text style={styles.moreText}>전체 보기 &gt;</Text>
+            </Pressable>
           </View>
 
+          {recentAnalyses.length === 0 && (
+            <Text style={styles.emptyText}>아직 분석 기록이 없어요. 첫 발표 연습을 시작해보세요!</Text>
+          )}
+
           {recentAnalyses.map((item) => (
-            <View key={item.id} style={styles.analysisItem}>
+            <Pressable
+              key={item.analysisId}
+              accessibilityRole="button"
+              accessibilityLabel={`${item.title} 분석 결과 보기`}
+              onPress={() =>
+                router.push({ pathname: '/result', params: { analysisId: item.analysisId } } as never)
+              }
+              style={styles.analysisItem}>
               <View style={styles.itemInfo}>
                 <Text style={styles.itemTitle}>{item.title}</Text>
-                <Text style={styles.itemDate}>{item.date}</Text>
+                <Text style={styles.itemDate}>{formatItemDate(item)}</Text>
               </View>
 
-              <View style={[styles.scoreCircle, { borderColor: getScoreColor(item.score) }]}>
-                <Text style={styles.scoreText}>{item.score}</Text>
+              <View style={[styles.scoreCircle, { borderColor: getScoreColor(item.totalScore) }]}>
+                <Text style={styles.scoreText}>{item.totalScore}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
         </View>
       </ScrollView>
@@ -249,6 +283,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     color: '#A1AAB8',
+  },
+  emptyText: {
+    paddingVertical: 20,
+    textAlign: 'center',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#98A3B3',
   },
   analysisItem: {
     minHeight: 72,

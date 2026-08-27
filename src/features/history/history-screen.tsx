@@ -65,7 +65,7 @@ export default function HistoryScreen() {
       ) : (
         <FlatList
           data={items}
-          keyExtractor={(item) => item.sessionId}
+          keyExtractor={(item) => item.analysisId}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
