@@ -3,6 +3,41 @@ export type SessionId = string;
 /** 발표 유형 코드. */
 export type PracticeTypeCode = 'INTERVIEW' | 'PT' | 'SPEECH';
 
+/** GET /api/practice-types 응답 항목. */
+export type PracticeType = {
+  code: PracticeTypeCode;
+  label: string;
+  recommendedMinSec: number;
+  recommendedMaxSec: number;
+};
+
+export type PracticeSessionStatus =
+  | 'CREATED'
+  | 'UPLOADED'
+  | 'ANALYSIS_REQUESTED'
+  | 'COMPLETED'
+  | 'FAILED';
+
+/** Practice Session API 공통 응답 (생성/조회/업로드/분석 요청). */
+export type PracticeSession = {
+  id: SessionId;
+  title: string;
+  practiceTypeCode: PracticeTypeCode;
+  targetDurationSeconds: number | null;
+  status: PracticeSessionStatus;
+  audioOriginalName: string | null;
+  audioContentType: string | null;
+  audioSizeBytes: number | null;
+  durationMs: number | null;
+  recordedAt: string | null;
+  latestAnalysisJobId: string | null;
+  failureReason: string | null;
+  analysisCompletedAt: string | null;
+  overallScore: number | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
 /** 세션 생성 시 입력받는 값. targetDurationSeconds는 이후 AI 분석의 기준값으로 사용된다. */
 export type CreateSessionParams = {
   title: string;
@@ -18,22 +53,49 @@ export type UploadedFile = {
   mimeType?: string;
 };
 
+/** analysis-service의 분석 작업 상태값. */
+export type AnalysisJobStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
 export type AnalysisProgress = {
+  status: AnalysisJobStatus;
   /** 0~100 */
   progress: number;
+  errorMessage: string | null;
 };
 
-export type MetricKey = 'speed' | 'delivery' | 'structure' | 'fluency';
+export type MetricKey =
+  | 'speed'
+  | 'delivery'
+  | 'structure'
+  | 'fluency'
+  | 'pronunciation'
+  | 'fillerWords';
 
 export type AnalysisMetric = {
   key: MetricKey;
   label: string;
+  /** 점수(0~100). fillerWords는 개수 값이 들어온다. */
   score: number;
+  /** 점수 뒤에 붙일 단위 (예: '개'). 없으면 숫자만 표시한다. */
+  unit?: string;
+  /** 진행 바 채움 비율(0~100). 없으면 score를 그대로 사용한다. */
+  progress?: number;
+};
+
+export type ImprovementTone = 'info' | 'warning' | 'success';
+
+/** 개선 포인트 카드 한 개. */
+export type ImprovementPoint = {
+  tone: ImprovementTone;
+  title: string;
+  description: string;
 };
 
 export type AnalysisResult = {
   totalScore: number;
-  /** 전체 평균 대비 차이 (%). 양수면 평균보다 높음 */
-  comparedToAveragePercent: number;
   metrics: AnalysisMetric[];
+  /** Coach Mic의 한마디 */
+  coachComment: string;
+  /** 개선 포인트 목록 */
+  improvements: ImprovementPoint[];
 };

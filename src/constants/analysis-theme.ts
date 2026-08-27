@@ -17,6 +17,16 @@ export const AnalysisColors = {
   metricRed: '#EF4444',
   metricGreen: '#22C55E',
   metricPurple: '#8B5CF6',
+  metricOrange: '#F97316',
+  // 지표/개선 포인트 카드 틴트
+  tintBlueBg: '#EDF3FE',
+  tintBlueBorder: '#D9E5FB',
+  tintYellowBg: '#FFF9EC',
+  tintYellowBorder: '#F3E8C8',
+  tintGreenBg: '#F0FAF0',
+  tintGreenBorder: '#D7EFD7',
+  tintRedBg: '#FEF2F1',
+  tintRedBorder: '#F8DAD6',
 };
 
 export const MascotVariants = {
