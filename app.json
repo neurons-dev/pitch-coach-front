@@ -39,7 +39,13 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "발표 녹음을 위해 마이크 사용을 허용해주세요."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

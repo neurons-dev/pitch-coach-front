@@ -1,52 +1,50 @@
-import { resetMockAnalysisProgress } from '@/api/analysis-api';
-import type { CreateSessionParams, SessionId, UploadedFile } from '@/types/analysis';
+import { apiFetch } from '@/api/client';
+import type {
+  CreateSessionParams,
+  PracticeSession,
+  SessionId,
+  UploadedFile,
+} from '@/types/analysis';
 
 /**
- * ─────────────────────────────────────────────────────────────
- * TODO(API): 백엔드 API가 준비되면 이 파일의 mock 구현을 실제 호출로 교체하세요.
- * 각 함수 안에 실제 호출 예시를 주석으로 남겨두었습니다. (`apiFetch` 사용)
- * 3단계 흐름: 세션 생성 → 세션에 파일 업로드 → 분석 요청
- * ─────────────────────────────────────────────────────────────
+ * Practice Session API — 3단계 흐름: 세션 생성 → 음성 파일 업로드 → 분석 요청
  */
 
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** 1단계: 분석 세션을 생성한다. targetDurationSeconds는 이후 AI 분석 시 기준값으로 사용된다. */
+/** 1단계: 발표 연습 세션을 생성한다. targetDurationSeconds는 이후 AI 분석 시 기준값으로 사용된다. */
 export async function createSession(params: CreateSessionParams): Promise<{ sessionId: SessionId }> {
-  // TODO(API): 실제 구현 예시
-  // return apiFetch<{ sessionId: SessionId }>('/sessions', {
-  //   method: 'POST',
-  //   body: JSON.stringify({
-  //     title: params.title,
-  //     practiceTypeCode: params.practiceTypeCode,
-  //     targetDurationSeconds: params.targetDurationSeconds,
-  //   }),
-  // });
-  await delay(200);
-  return { sessionId: 'mock-session-id' };
+  const session = await apiFetch<PracticeSession>('/api/practice-sessions', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  });
+  return { sessionId: session.id };
 }
 
-/** 2단계: 생성된 세션에 오디오 파일을 업로드한다. */
-export async function uploadFileToSession(sessionId: SessionId, file: UploadedFile): Promise<void> {
-  // TODO(API): 실제 구현 예시 (multipart/form-data)
-  // const formData = new FormData();
-  // formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
-  // await apiFetch<void>(`/sessions/${sessionId}/files`, {
-  //   method: 'POST',
-  //   body: formData,
-  // });
-  await delay(300);
+/** 2단계: 세션에 녹음/선택한 오디오 파일을 업로드한다. (CREATED/FAILED 상태에서만 가능) */
+export async function uploadFileToSession(
+  sessionId: SessionId,
+  file: UploadedFile,
+): Promise<PracticeSession> {
+  const formData = new FormData();
+  // React Native의 FormData 파일 파트 형식({ uri, name, type })은 DOM 타입에 없어서 캐스팅한다.
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: file.mimeType ?? 'audio/x-m4a',
+  } as unknown as Blob);
+
+  return apiFetch<PracticeSession>(`/api/practice-sessions/${sessionId}/audio`, {
+    method: 'POST',
+    body: formData,
+  });
 }
 
-/** 3단계: 파일이 업로드된 세션에 대해 분석을 요청한다. */
+/** 3단계: 업로드된 세션에 대해 분석을 요청한다. (UPLOADED 상태에서만 가능) */
 export async function requestAnalysis(sessionId: SessionId): Promise<{ analysisId: string }> {
-  // TODO(API): 실제 구현 예시
-  // return apiFetch<{ analysisId: string }>(`/sessions/${sessionId}/analyze`, {
-  //   method: 'POST',
-  // });
-  resetMockAnalysisProgress();
-  await delay(300);
-  return { analysisId: 'mock-analysis-id' };
+  const session = await apiFetch<PracticeSession>(`/api/practice-sessions/${sessionId}/analysis`, {
+    method: 'POST',
+  });
+  if (!session.latestAnalysisJobId) {
+    throw new Error(`분석 작업 ID가 없습니다. (session: ${session.id})`);
+  }
+  return { analysisId: session.latestAnalysisJobId };
 }
