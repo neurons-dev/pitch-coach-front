@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,7 +7,6 @@ import { getAnalysisProgress } from '@/api/analysis-api';
 import { AnalysisStepCard } from '@/components/analysis/analysis-step-card';
 import { ProgressBar, ProgressHeader } from '@/components/analysis/progress-bar';
 import { MascotIllustration } from '@/components/mascot-illustration';
-import { TipBanner } from '@/components/tip-banner';
 import { AnalysisColors, MascotVariants } from '@/constants/analysis-theme';
 
 const STEPS = [
@@ -27,6 +26,10 @@ const PROGRESS_LABELS = [
 ];
 
 const POLL_INTERVAL_MS = 2000;
+const TICK_INTERVAL_MS = 150;
+const TICK_STEP = 1;
+const DISPLAY_LEAD_CAP = 15;
+const DISPLAY_MAX_BEFORE_COMPLETE = 99;
 
 function getStepStatus(stepIndex: number, activeStep: number) {
   if (stepIndex < activeStep) {
@@ -42,7 +45,8 @@ function getStepStatus(stepIndex: number, activeStep: number) {
 
 export default function AnalysisScreen() {
   const { analysisId } = useLocalSearchParams<{ analysisId?: string }>();
-  const [progress, setProgress] = useState(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
+  const serverProgressRef = useRef(0);
 
   useEffect(() => {
     if (!analysisId) {
@@ -51,12 +55,11 @@ export default function AnalysisScreen() {
 
     let cancelled = false;
 
-    const interval = setInterval(async () => {
+    const pollInterval = setInterval(async () => {
       let next;
       try {
         next = await getAnalysisProgress(analysisId);
       } catch {
-        // 일시적 네트워크/서버 오류는 다음 폴링에서 재시도한다.
         return;
       }
 
@@ -65,16 +68,17 @@ export default function AnalysisScreen() {
       }
 
       if (next.status === 'failed' || next.status === 'cancelled') {
-        clearInterval(interval);
+        clearInterval(pollInterval);
         Alert.alert('분석 실패', next.errorMessage ?? '분석 중 문제가 발생했어요. 다시 시도해주세요.');
         router.replace('/(tabs)' as never);
         return;
       }
 
-      setProgress(next.progress);
+      serverProgressRef.current = next.progress;
 
       if (next.status === 'completed') {
-        clearInterval(interval);
+        clearInterval(pollInterval);
+        setDisplayProgress(100);
         setTimeout(() => {
           if (!cancelled) {
             router.replace({ pathname: '/result', params: { analysisId } } as never);
@@ -83,20 +87,31 @@ export default function AnalysisScreen() {
       }
     }, POLL_INTERVAL_MS);
 
+    const tickInterval = setInterval(() => {
+      setDisplayProgress((current) => {
+        if (current >= 100) {
+          return current;
+        }
+        const ceiling = Math.min(serverProgressRef.current + DISPLAY_LEAD_CAP, DISPLAY_MAX_BEFORE_COMPLETE);
+        return Math.min(current + TICK_STEP, Math.max(ceiling, current));
+      });
+    }, TICK_INTERVAL_MS);
+
     return () => {
       cancelled = true;
-      clearInterval(interval);
+      clearInterval(pollInterval);
+      clearInterval(tickInterval);
     };
   }, [analysisId]);
 
   const activeStep = useMemo(() => {
-    if (progress >= 100) {
+    if (displayProgress >= 100) {
       return STEPS.length;
     }
 
     const stepSize = 100 / STEPS.length;
-    return Math.min(Math.floor(progress / stepSize), STEPS.length - 1);
-  }, [progress]);
+    return Math.min(Math.floor(displayProgress / stepSize), STEPS.length - 1);
+  }, [displayProgress]);
 
   const progressLabel = PROGRESS_LABELS[Math.min(activeStep, PROGRESS_LABELS.length - 1)];
 
@@ -111,8 +126,8 @@ export default function AnalysisScreen() {
         <Text style={styles.subtitle}>잠시만 기다려주세요 ...</Text>
 
         <View style={styles.progressSection}>
-          <ProgressHeader label={progressLabel} progress={progress} />
-          <ProgressBar progress={progress} />
+          <ProgressHeader label={progressLabel} progress={displayProgress} />
+          <ProgressBar progress={displayProgress} />
         </View>
 
         <View>
@@ -125,8 +140,6 @@ export default function AnalysisScreen() {
             />
           ))}
         </View>
-
-        <TipBanner />
       </ScrollView>
     </SafeAreaView>
   );

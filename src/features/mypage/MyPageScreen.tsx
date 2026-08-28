@@ -72,6 +72,9 @@ export default function MyPageScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>마이</Text>
+      </View>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <View style={styles.avatarWrap}>
@@ -152,14 +155,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: RecordingColors.screen,
   },
+  pageHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E8F5',
+  },
+  pageTitle: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+  },
   scroll: {
     flex: 1,
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 32,
+    paddingTop: 24,
+    paddingBottom: 32,
   },
   profileCard: {
     flexDirection: 'row',

@@ -28,7 +28,6 @@ export default function HomeScreen() {
   const { name } = useCurrentUser();
   const [recentAnalyses, setRecentAnalyses] = useState<HistoryItem[]>([]);
 
-  // 홈에 들어올 때마다 최근 분석 결과를 새로 고침한다.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -150,11 +149,11 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 48,
+    paddingTop: 24,
     paddingBottom: 32,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 32,
   },
   greeting: {
     fontSize: 22,

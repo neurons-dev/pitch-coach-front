@@ -10,6 +10,13 @@ import { MascotIllustration } from '@/components/mascot-illustration';
 import { AnalysisColors, MascotVariants } from '@/constants/analysis-theme';
 import type { AnalysisResult, ImprovementTone, MetricKey } from '@/types/analysis';
 
+function getScoreColor(score: number) {
+  if (score >= 90) return '#4CAF50';
+  if (score >= 80) return '#3D6DF5';
+  if (score >= 60) return '#F0B429';
+  return '#E53935';
+}
+
 type MetricStyle = {
   icon: keyof typeof MaterialIcons.glyphMap;
   iconColor: string;
@@ -109,9 +116,6 @@ export default function ResultScreen() {
     };
   }, [analysisId]);
 
-  // 히스토리에서 들어온 경우에만 히스토리 목록으로 돌아간다.
-  // 녹음/업로드 후 분석 흐름으로 들어온 경우에는 중간 화면(세션 생성, 녹음, 업로드)에
-  // 남아있는 이전 상태로 돌아가지 않도록 항상 홈으로 이동한다.
   const goBack = () => {
     if (origin === 'history') {
       if (router.canGoBack()) {
@@ -145,7 +149,7 @@ export default function ResultScreen() {
       ) : (
         <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
           <View style={styles.scoreCard}>
-            <View style={styles.scoreRing}>
+            <View style={[styles.scoreRing, { borderColor: getScoreColor(result.totalScore) }]}>
               <Text style={styles.scoreValue}>{result.totalScore}</Text>
               <Text style={styles.scoreUnit}>점</Text>
             </View>
@@ -268,7 +272,7 @@ const styles = StyleSheet.create({
     width: 112,
     height: 112,
     borderRadius: 56,
-    borderWidth: 8,
+    borderWidth: 14,
     borderColor: AnalysisColors.button,
     alignItems: 'center',
     justifyContent: 'center',

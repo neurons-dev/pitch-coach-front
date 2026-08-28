@@ -22,7 +22,6 @@ export default function UploadScreen() {
     router.replace('/(tabs)' as never);
   };
 
-  // 2단계: 세션에 파일 업로드
   const handleSelectFile = async () => {
     if (isUploading || uploadedFileName) return;
 
@@ -50,7 +49,6 @@ export default function UploadScreen() {
     }
   };
 
-  // 3단계: 분석 요청 버튼을 눌러야만 분석 화면으로 이동한다.
   const handleRequestAnalysis = async () => {
     if (!uploadedFileName || isRequestingAnalysis) return;
 

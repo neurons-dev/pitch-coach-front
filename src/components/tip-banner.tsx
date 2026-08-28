@@ -5,7 +5,6 @@ import { AnalysisColors } from '@/constants/analysis-theme';
 import { getRandomTip } from '@/constants/tips';
 
 export function TipBanner() {
-  // 화면에 들어올 때마다 랜덤으로 팁 하나를 고른다.
   const [tip] = useState(getRandomTip);
 
   return (

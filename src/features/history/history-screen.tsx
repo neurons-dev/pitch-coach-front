@@ -30,7 +30,6 @@ export default function HistoryScreen() {
   const [items, setItems] = useState<HistoryItem[] | null>(null);
   const [hasError, setHasError] = useState(false);
 
-  // 탭에 들어올 때마다 새로 고침해서 방금 마친 연습도 목록에 반영한다.
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -63,6 +62,9 @@ export default function HistoryScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <View style={styles.pageHeader}>
+        <Text style={styles.pageTitle}>히스토리</Text>
+      </View>
       {hasError ? (
         <View style={styles.loading}>
           <Text style={styles.emptyText}>목록을 불러오지 못했어요.</Text>
@@ -130,6 +132,19 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: RecordingColors.screen,
   },
+  pageHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E8F5',
+  },
+  pageTitle: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+  },
   loading: {
     flex: 1,
     alignItems: 'center',
@@ -179,8 +194,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 8,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E0E8F5',
   },
   rowBody: {
     flex: 1,
@@ -197,8 +215,7 @@ const styles = StyleSheet.create({
     color: '#8A94A6',
   },
   separator: {
-    height: 1,
-    backgroundColor: '#E8EEF7',
+    height: 12,
   },
   scoreBadge: {
     width: 48,

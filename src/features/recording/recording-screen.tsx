@@ -12,10 +12,8 @@ import { WaveformVisualizer } from '@/components/recording/waveform-visualizer';
 import { TipBanner } from '@/components/tip-banner';
 import { RecordingColors } from '@/constants/recording-theme';
 
-// 작은 화면(iPhone SE 등)에서는 팁 배너를 숨겨 하단 컨트롤이 잘리지 않게 한다.
 const COMPACT_HEIGHT_THRESHOLD = 700;
 
-// 캐릭터 크기는 화면 높이에 비례해서 조절한다. 기준 높이는 iPhone 13 Pro(844).
 const MASCOT_REFERENCE_HEIGHT = 844;
 const MASCOT_MIN_SCALE = 0.72;
 
@@ -45,7 +43,6 @@ export default function RecordingScreen() {
   const [isUploaded, setIsUploaded] = useState(false);
   const [isRequestingAnalysis, setIsRequestingAnalysis] = useState(false);
 
-  // 세션이 바뀔 때마다(새 세션으로 진입할 때) 녹음 상태를 초기화한다.
   useEffect(() => {
     setElapsedSeconds(0);
     setStatus('idle');
@@ -90,7 +87,6 @@ export default function RecordingScreen() {
     return () => clearInterval(interval);
   }, [status]);
 
-  // 세션 없이 녹음 탭에 바로 진입하면 세션 생성 화면으로 보낸다.
   if (!sessionId) {
     return <Redirect href={{ pathname: '/session-new', params: { mode: 'record' } } as never} />;
   }
@@ -149,7 +145,6 @@ export default function RecordingScreen() {
     router.replace('/(tabs)' as never);
   };
 
-  // 녹음 종료 버튼: 녹음을 마치고 2단계(파일 업로드)만 진행한다. 분석 요청은 별도 버튼으로 진행한다.
   const handleStop = async () => {
     if (isUploading || isUploaded) {
       return;
@@ -177,7 +172,6 @@ export default function RecordingScreen() {
     }
   };
 
-  // 3단계: 분석 요청 버튼을 눌러야만 분석 화면으로 이동한다.
   const handleRequestAnalysis = async () => {
     if (!isUploaded || isRequestingAnalysis) {
       return;
@@ -210,12 +204,18 @@ export default function RecordingScreen() {
             <MaterialIcons name="arrow-back" size={22} color={RecordingColors.textPrimary} />
           </Pressable>
 
-          {status !== 'idle' && (
-            <View style={styles.recBadge}>
-              <View style={styles.recDot} />
-              <Text style={styles.recText}>{status === 'paused' ? 'PAUSE' : 'REC'}</Text>
-            </View>
-          )}
+          <View style={styles.headerRight}>
+            {status !== 'idle' && (
+              <View style={styles.recBadge}>
+                <View style={styles.recDot} />
+                <Text style={styles.recText}>{status === 'paused' ? 'PAUSE' : 'REC'}</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.pageHeader}>
+          <Text style={styles.pageTitle}>녹음</Text>
         </View>
 
         <Text style={styles.title}>{title}</Text>
@@ -302,6 +302,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: RecordingColors.backButton,
   },
+  headerRight: {
+    width: 42,
+    alignItems: 'flex-end',
+  },
+  pageHeader: {
+    marginTop: 8,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E8F5',
+  },
+  pageTitle: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '800',
+    color: RecordingColors.textPrimary,
+  },
   recBadge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -320,7 +336,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   title: {
-    marginTop: 40,
+    marginTop: 20,
     textAlign: 'center',
     color: RecordingColors.textPrimary,
     fontSize: 20,
